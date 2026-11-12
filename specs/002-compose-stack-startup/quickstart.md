@@ -10,11 +10,23 @@ Esta guía valida los cinco servicios, las migraciones, el procesamiento live/re
 
 ## Escenario 1: levantar servicios y revisar estado
 
-Desde PowerShell, en la raíz del repositorio:
+Desde la raíz del repositorio (PowerShell):
 
 ```powershell
 if (!(Test-Path .env)) { Copy-Item .env.example .env }
 # Completa .env con los valores locales requeridos antes de continuar.
+docker compose up --build -d
+docker compose ps
+docker compose logs --tail 100 postgres kafka api productor consumidor
+docker compose exec api python -m observatorio.healthcheck api
+docker compose exec productor python -m observatorio.healthcheck productor
+docker compose exec consumidor python -m observatorio.healthcheck consumidor
+```
+
+En Linux/macOS, el equivalente para preparar y levantar el stack es:
+
+```bash
+test -f .env || cp .env.example .env
 docker compose up --build -d
 docker compose ps
 docker compose logs --tail 100 postgres kafka api productor consumidor
@@ -60,7 +72,9 @@ docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select mode, min(event_time), min(ingested_at) from event_version group by mode;"'
 ```
 
-**Resultado esperado**: se procesan al menos diez eventos en orden temporal por el topic replay; se conserva el tiempo de ocurrencia, `ingested_at` refleja la reproducción y el replay no crea ni modifica filas live. Ejecutar dos veces la misma selección no duplica versiones ni publicaciones confirmadas.
+**Resultado esperado**: el productor consulta el catálogo histórico FDSN de USGS por meses, aplica los filtros de año, magnitud y tipo, ordena los eventos por su tiempo de ocurrencia y publica en `quakes.replay`. Si la selección devuelve eventos, quedan en modo replay; el tiempo de ocurrencia se conserva y `ingested_at` refleja la reproducción. El mismo evento replay no crea ni modifica la fila live.
+
+El parámetro `--interval-seconds` controla la pausa entre publicaciones. Para probar únicamente si la consulta produce eventos sin esperar entre ellos, se puede indicar `--interval-seconds 0`.
 
 ## Escenario 5: fallos, reintentos y recuperación
 
@@ -107,7 +121,13 @@ Ejecuta las pruebas unitarias e integración de la imagen Python:
 docker compose run --rm --no-deps --entrypoint python api -m pytest /app/tests
 ```
 
-La suite debe cubrir al menos: cinco inicializaciones limpias, dos reinicios conservando datos, las cinco conexiones internas, secuencias de evento nuevo/duplicado/revisión nueva/revisión antigua, cuarentena antes del ACK, aislamiento replay, y cinco pruebas de recuperación de dependencia con límite de 60 segundos.
+La suite automatizada cubre la persistencia idempotente sobre SQLite, revisiones actuales, cuarentena idempotente, orden de persistencia antes del ACK en el consumidor, ACK antes del registro de publicación, aislamiento de modos, filtrado/orden temporal del catálogo histórico, readiness por rol, reintentos y redacción de secretos:
+
+```bash
+.venv/bin/python -m pytest backend/tests -q
+```
+
+Las pruebas contra Kafka/PostgreSQL reales y los límites temporales de recuperación se verifican con los escenarios Compose anteriores; no se consideran demostrados solo por las pruebas SQLite/mock.
 
 ## Cierre
 

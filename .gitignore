@@ -1,0 +1,28 @@
+# Local environment and generated files
+node_modules/
+dist/
+build/
+coverage/
+*.log
+*.log*
+.env*
+.env/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# Common editor and OS files
+.vscode/
+.idea/
+
+# Local secrets and certificates
+*.key
+*.crt
+*.pem
+secrets/

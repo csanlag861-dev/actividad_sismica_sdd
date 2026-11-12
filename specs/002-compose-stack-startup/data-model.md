@@ -1,16 +1,19 @@
+
 # Data Model: Persistencia y procesamiento del observatorio
 
 ## Propósito y decisiones
 
 El modelo soporta el flujo live/replay exigido por el enunciado y el alcance de ROADMAP R09. Las tablas y campos se explican por su grano y uso; no se añaden campos derivados sin un proceso que los necesite. SQLAlchemy define las entidades y Alembic conserva la creación y evolución del esquema. Esta entrega crea y utiliza el almacenamiento, pero no implementa endpoints HTTP.
 
-Se usan tipos PostgreSQL con marcas de tiempo `TIMESTAMPTZ` normalizadas a UTC. El campo `mode` separa `live` de `replay` mediante claves compuestas y filtros explícitos; cada modo utiliza un topic distinto. No se mezclan eventos live y replay con el mismo `event_id`.
+Se usan tipos PostgreSQL con marcas de tiempo `TIMESTAMPTZ` normalizadas a UTC; el ORM las declara como `DateTime(timezone=True)` para conservar ese contrato al enlazar valores con PostgreSQL. El campo `mode` separa `live` de `replay` mediante claves compuestas y filtros explícitos; cada modo utiliza un topic distinto. No se mezclan eventos live y replay con el mismo `event_id`.
 
 ## Entidades
 
 ### `country`
 
 Una fila por país del catálogo Natural Earth utilizado para enriquecer eventos. El identificador procede de `ADM0_A3` y debe comprobarse como único antes de sembrar el catálogo; el nombre preferido es `NAME_ES`, con `ADMIN` como alternativa si el nombre español no está disponible.
+
+La geometría procede de Natural Earth **Admin 0 - Countries, escala 1:110m**. El original runtime está empaquetado en `backend/data/ne_110m_admin_0_countries.geojson`; su URL de origen, fecha de recuperación y SHA-256 están registrados en `backend/data/geodata_manifest.json`. El mismo GeoJSON se publica como recurso del frontend en `frontend/public/datos/paises.geojson`. El arranque valida el formato, la geometría y la unicidad de `ADM0_A3` antes de sembrar países o enriquecer eventos.
 
 | Campo | Tipo propuesto | Requerido | Motivo |
 |---|---|---:|---|
