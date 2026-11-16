@@ -107,6 +107,35 @@ Para simular recuperación, detener consumidor durante una carga de prueba contr
 
 Ejecutar una carga de catálogo para el intervalo UTC faltante con filtros y origen registrados. Esperado: el backfill conserva las fechas originales y su modo/procedencia, los eventos ya observados se deduplican por versión, y ningún evento preexistente se borra por su ausencia del feed.
 
+## Registro de validación ejecutado
+
+Validación realizada en Linux con un entorno virtual Python y una pila Compose aislada para no interrumpir la pila de desarrollo que ya estaba activa:
+
+```sh
+cd backend
+/tmp/actividad-sismica-venv/bin/python -m pytest -q tests
+```
+
+Resultado: `51 passed`. La misma suite ejecutada dentro de la imagen del consumidor también terminó con `51 passed`. Incluye los casos de versiones, validación/cuarentena, offsets, catálogo geográfico, archivos y checkpoints históricos.
+
+La pila aislada se inició como `actividad-sismica-h5`, con nombres de contenedor únicos temporales para los cinco servicios:
+
+```sh
+docker compose -f compose.yaml -f compose.validation.yaml -p actividad-sismica-h5 up --build -d
+docker compose -f compose.yaml -f compose.validation.yaml -p actividad-sismica-h5 ps
+```
+
+Los cinco servicios quedaron healthy y el bootstrap alcanzó Alembic `0006_ingestion_intervals`. El productor live archivó una respuesta de 195 Features; el consumidor procesó los mensajes y persistió versiones y estado actual en PostgreSQL.
+
+Se ejecutó el lote anual configurado por defecto y, después, se repitió para comprobar que los checkpoints completos evitan una segunda publicación:
+
+```sh
+docker compose -f compose.yaml -f compose.validation.yaml -p actividad-sismica-h5 exec -T productor \
+  python -m observatorio.producer.replay --year 2025 --min-magnitude 4 --event-type earthquake --interval-seconds 0
+```
+
+Resultado: 12 intervalos mensuales archivados y completados, 18.242 mensajes replay publicados; al repetir el comando, el productor informó que la consulta ya tenía checkpoints completos y publicó 0 mensajes. También se probó `--start 2025-01-01T00:00:00Z --end 2025-01-02T00:00:00Z`: archivó 60 Features y la repetición no publicó mensajes. El override temporal de Compose se retiró al terminar esta validación.
+
 ## Limpieza
 
 Detener los servicios de validación:

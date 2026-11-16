@@ -32,6 +32,8 @@ def load_geojson_catalog(path: Path | None = None) -> dict[str, Any]:
 
     seen: set[str] = set()
     for feature in payload["features"]:
+        if not isinstance(feature, dict):
+            raise ValueError(f"Natural Earth catalog contains a non-object feature: {catalog_path}")
         properties = feature.get("properties") or {}
         country_id = properties.get("ADM0_A3")
         if not isinstance(country_id, str) or len(country_id) != 3:
@@ -39,6 +41,9 @@ def load_geojson_catalog(path: Path | None = None) -> dict[str, Any]:
         if country_id in seen:
             raise ValueError(f"Natural Earth ADM0_A3 code is not unique: {country_id}")
         seen.add(country_id)
+        for field in ("NAME_ES", "ADMIN", "CONTINENT", "SUBREGION"):
+            if not isinstance(properties.get(field), str) or not properties[field].strip():
+                raise ValueError(f"Natural Earth feature {country_id} has invalid {field}")
         if not isinstance(feature.get("geometry"), dict):
             raise ValueError(f"Natural Earth feature {country_id} has no geometry")
     return payload
@@ -50,13 +55,24 @@ async def ensure_country_catalog(session: AsyncSession) -> list[Country]:
     for feature in payload["features"]:
         properties = feature["properties"]
         country_id = properties["ADM0_A3"]
-        country_name = str(properties.get("NAME_ES") or properties.get("ADMIN") or country_id).strip()
+        country_name = properties["NAME_ES"].strip()
         country = await session.get(Country, country_id)
         if country is None:
-            country = Country(country_id=country_id, country_name=country_name)
+            country = Country(
+                country_id=country_id,
+                country_name=country_name,
+                name_es=properties["NAME_ES"].strip(),
+                admin=properties["ADMIN"].strip(),
+                continent=properties["CONTINENT"].strip(),
+                subregion=properties["SUBREGION"].strip(),
+            )
             session.add(country)
         else:
             country.country_name = country_name
+            country.name_es = properties["NAME_ES"].strip()
+            country.admin = properties["ADMIN"].strip()
+            country.continent = properties["CONTINENT"].strip()
+            country.subregion = properties["SUBREGION"].strip()
         inserted_or_updated.append(country)
     await session.commit()
     return inserted_or_updated

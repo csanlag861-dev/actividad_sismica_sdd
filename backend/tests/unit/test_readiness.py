@@ -29,7 +29,7 @@ async def test_producer_and_consumer_readiness_requires_database_and_kafka(monke
 
 
 def test_expected_alembic_revision_is_current_migration_head() -> None:
-    assert expected_revision() == "0002_event_current_version_fk"
+    assert expected_revision() == "0006_ingestion_intervals"
 
 
 @pytest.mark.asyncio

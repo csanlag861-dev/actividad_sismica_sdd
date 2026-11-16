@@ -23,8 +23,12 @@ async def test_model_metadata_creates_required_tables() -> None:
         "ingestion_run",
         "event_version",
         "event_current",
+        "event_version_source",
         "published_version",
+        "published_payload",
         "quarantine",
+        "source_archive",
+        "ingestion_interval",
     }.issubset(tables)
     await engine.dispose()
 

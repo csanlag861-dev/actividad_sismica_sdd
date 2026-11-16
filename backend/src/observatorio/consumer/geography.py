@@ -34,15 +34,3 @@ def resolve_country_id(event: dict, country_catalog: dict[str, str] | None = Non
     if longitude is None or latitude is None:
         return None
     return country_for_coordinates(float(longitude), float(latitude))
-
-
-def country_matches_place(place_name: str, country_catalog: dict[str, str] | None = None) -> str | None:
-    if not place_name or not country_catalog:
-        return None
-    normalized = place_name.strip().casefold()
-    matches = [
-        code
-        for code, country_name in country_catalog.items()
-        if country_name and country_name.strip().casefold() == normalized
-    ]
-    return matches[0] if len(matches) == 1 else None

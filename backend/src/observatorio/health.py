@@ -21,9 +21,13 @@ async def _check_postgres(service_name: str) -> bool:
             return await verify_revision_applied()
         if service_name == "productor":
             await conn.execute(text("SELECT 1 FROM published_version LIMIT 0"))
+            await conn.execute(text("SELECT 1 FROM published_payload LIMIT 0"))
+            await conn.execute(text("SELECT 1 FROM source_archive LIMIT 0"))
         elif service_name == "consumidor":
             await conn.execute(text("SELECT 1 FROM event_version LIMIT 0"))
+            await conn.execute(text("SELECT 1 FROM event_version_source LIMIT 0"))
             await conn.execute(text("SELECT 1 FROM quarantine LIMIT 0"))
+            await conn.execute(text("SELECT 1 FROM ingestion_interval LIMIT 0"))
     return True
 
 

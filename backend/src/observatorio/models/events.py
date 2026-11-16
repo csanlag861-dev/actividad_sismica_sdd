@@ -4,7 +4,18 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import JSON, CheckConstraint, Date, DateTime, ForeignKey, ForeignKeyConstraint, Numeric, PrimaryKeyConstraint, String, Text
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Numeric,
+    PrimaryKeyConstraint,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -60,3 +71,34 @@ class EventCurrent(Base):
     mode: Mapped[str] = mapped_column(String(10), nullable=False)
     event_id: Mapped[str] = mapped_column(Text, nullable=False)
     current_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class EventVersionSource(Base):
+    __tablename__ = "event_version_source"
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "mode",
+            "event_id",
+            "updated_at",
+            name="pk_event_version_source",
+        ),
+        ForeignKeyConstraint(
+            ["mode", "event_id", "updated_at"],
+            ["event_version.mode", "event_version.event_id", "event_version.updated_at"],
+            name="fk_event_version_source_version",
+            ondelete="CASCADE",
+        ),
+        CheckConstraint("mode IN ('live', 'replay')", name="ck_event_version_source_mode"),
+    )
+
+    mode: Mapped[str] = mapped_column(String(10), nullable=False)
+    event_id: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    original_feature: Mapped[dict] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        nullable=False,
+    )
+    ingestion_run_id: Mapped[UUID] = mapped_column(ForeignKey("ingestion_run.run_id"), nullable=False)
+    source: Mapped[str] = mapped_column(Text, nullable=False)
+    ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

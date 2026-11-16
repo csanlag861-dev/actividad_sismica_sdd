@@ -21,8 +21,12 @@ REQUIRED_TABLES = {
     "ingestion_run",
     "event_version",
     "event_current",
+    "event_version_source",
     "published_version",
+    "published_payload",
     "quarantine",
+    "source_archive",
+    "ingestion_interval",
 }
 
 

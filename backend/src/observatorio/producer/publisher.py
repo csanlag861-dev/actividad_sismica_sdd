@@ -6,11 +6,12 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from observatorio.db.session import session_factory
-from observatorio.models import PublishedVersion
+from observatorio.models import PublishedPayload, PublishedVersion
+from observatorio.payloads import payload_fingerprint
 
 
 def _event_updated_at(payload: Mapping[str, Any]) -> datetime:
@@ -51,28 +52,36 @@ async def publish_event(
         raise ValueError("event payload is missing its id")
     updated_at = _event_updated_at(payload)
     factory = session_factory_override or session_factory
+    payload_sha256 = payload_fingerprint(raw_event)
 
     async with factory() as session:
-        latest = await session.scalar(
-            select(func.max(PublishedVersion.updated_at)).where(
-                PublishedVersion.mode == mode,
-                PublishedVersion.event_id == event_id,
+        latest_sha256 = await session.scalar(
+            select(PublishedPayload.payload_sha256)
+            .where(
+                PublishedPayload.mode == mode,
+                PublishedPayload.event_id == event_id,
+                PublishedPayload.updated_at == updated_at,
             )
+            .order_by(PublishedPayload.published_at.desc())
+            .limit(1)
         )
-    if latest is not None:
-        if latest.tzinfo is None:
-            latest = latest.replace(tzinfo=timezone.utc)
-        if latest >= updated_at:
-            return {"event_id": event_id, "mode": mode, "status": "already_published"}
+    if latest_sha256 == payload_sha256:
+        return {
+            "event_id": event_id,
+            "updated_at": updated_at,
+            "mode": mode,
+            "status": "already_published",
+        }
 
     now = datetime.now(timezone.utc)
     run_id = str(ingestion_run_id or payload.get("ingestion_run_id") or "")
+    ingested_at = payload.get("ingested_at") or now.isoformat()
     envelope = {
         "id": event_id,
         "mode": mode,
         "source": payload.get("source", "usgs"),
         "ingestion_run_id": run_id,
-        "ingested_at": now.isoformat(),
+        "ingested_at": ingested_at,
         "published_at": now.isoformat(),
         "payload": dict(raw_event),
     }
@@ -84,16 +93,33 @@ async def publish_event(
 
     async with factory() as session:
         async with session.begin():
-            published = PublishedVersion(
+            acknowledged = PublishedPayload(
                 mode=mode,
                 event_id=event_id,
                 updated_at=updated_at,
+                payload_sha256=payload_sha256,
                 published_at=now,
                 kafka_topic=topic,
                 kafka_partition=metadata.partition,
                 kafka_offset=metadata.offset,
             )
-            session.add(published)
+            await session.merge(acknowledged)
+
+            existing_legacy = await session.get(
+                PublishedVersion,
+                (mode, event_id, updated_at),
+            )
+            if existing_legacy is None:
+                published = PublishedVersion(
+                    mode=mode,
+                    event_id=event_id,
+                    updated_at=updated_at,
+                    published_at=now,
+                    kafka_topic=topic,
+                    kafka_partition=metadata.partition,
+                    kafka_offset=metadata.offset,
+                )
+                session.add(published)
     return {
         "topic": topic,
         "partition": metadata.partition,

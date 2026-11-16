@@ -10,14 +10,14 @@
 
 **Purpose**: Prepare reusable test inputs for the existing Python backend without adding dependencies or services.
 
-- [ ] T001 [P] Add reusable GeoJSON Feature and Kafka-envelope fixture builders for real-like and malformed test cases in `backend/tests/conftest.py`.
+- [X] T001 [P] Add reusable GeoJSON Feature and Kafka-envelope fixture builders for real-like and malformed test cases in `backend/tests/conftest.py`.
 
 ## Phase 2: Foundational
 
 **Purpose**: Provide a deterministic source-payload fingerprint for publisher deduplication and in-place version replacement, without inferring hashes for incomplete legacy payloads.
 
-- [ ] T002 [P] Add tests for stable fingerprints across JSON key ordering, changed source content, and exclusion of volatile envelope metadata in `backend/tests/unit/test_payload_fingerprint.py`.
-- [ ] T003 Implement canonical JSON SHA-256 fingerprinting of the complete source Feature, excluding envelope timestamps, in `backend/src/observatorio/payloads.py`.
+- [X] T002 [P] Add tests for stable fingerprints across JSON key ordering, changed source content, and exclusion of volatile envelope metadata in `backend/tests/unit/test_payload_fingerprint.py`.
+- [X] T003 Implement canonical JSON SHA-256 fingerprinting of the complete source Feature, excluding envelope timestamps, in `backend/src/observatorio/payloads.py`.
 
 **Checkpoint**: Shared fixtures and fingerprint utility are ready; publisher and consumer can apply changed source content to one version row.
 
@@ -29,15 +29,15 @@
 
 ### Tests for User Story 1
 
-- [ ] T004 [P] [US1] Test live fixed-rate 60-second scheduling with 5-second tolerance, monotonic deadlines, missed-slot behavior, no overlap, 8-second timeout and at most 3 retries at 1/2/4 seconds; also verify the envelope's original Feature and provenance in `backend/tests/unit/test_live_ingestion.py`.
-- [ ] T005 [P] [US1] Test that a hash equal to the latest ACK for a version identity is skipped, a changed hash is forwarded, a previously seen hash is forwarded again after another hash was ACKed, and Kafka failure does not record publication in `backend/tests/unit/test_publisher.py`.
+- [X] T004 [P] [US1] Test live fixed-rate 60-second scheduling with 5-second tolerance, monotonic deadlines, missed-slot behavior, no overlap, 8-second timeout and at most 3 retries at 1/2/4 seconds; also verify the envelope's original Feature and provenance in `backend/tests/unit/test_live_ingestion.py`.
+- [X] T005 [P] [US1] Test that a hash equal to the latest ACK for a version identity is skipped, a changed hash is forwarded, a previously seen hash is forwarded again after another hash was ACKed, and Kafka failure does not record publication in `backend/tests/unit/test_publisher.py`.
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Add `PublishedPayload` keyed by `(mode, event_id, updated_at, payload_sha256)` without changing legacy `PublishedVersion`; add `SourceArchive` keyed by response SHA-256 with auditable `deleted_at`, nullable `IngestionRun.query_metadata` and `source_archive_sha256`, and nullable `Quarantine.ingestion_run_id`; create a backfill-safe migration that leaves old fingerprints unknown in `backend/src/observatorio/models/publication.py`, `backend/src/observatorio/models/reference.py`, `backend/src/observatorio/models/quarantine.py`, and `backend/migrations/versions/0003_live_provenance.py`.
-- [ ] T007 [US1] Change `publish_event` to fingerprint and publish the complete original GeoJSON Feature; skip only when the hash equals the latest ACKed hash for that identity, forward a changed hash even if it appeared earlier before a different hash, treat legacy `PublishedVersion` rows as unknown rather than equal, and write the ledger only after `send_and_wait` succeeds in `backend/src/observatorio/producer/publisher.py`.
-- [ ] T008 [US1] Archive the complete live response atomically before extracting or publishing Features; deduplicate stored files by response SHA-256 while creating one `IngestionRun` per query with request URL, timestamps, HTTP status, count, source mode, and archive reference; schedule every 60 seconds with 5-second tolerance, 8-second request timeout, up to 3 retries at 1/2/4 seconds for network/429/5xx/unparseable responses, no retry for other 4xx, no overlap or catch-up burst, and preserve the previous successful run on errors in `backend/src/observatorio/producer/live.py`, `backend/src/observatorio/producer/source.py`, and `backend/src/observatorio/config.py`.
-- [ ] T009 [US1] Test controlled feed-to-consumer persistence, archive-before-publish ordering, identical response reuse across distinct runs, failed-poll recovery, and repeat-poll idempotence against `specs/003-pipeline-sismico-completo/contracts/pipeline-message.md` in `backend/tests/integration/test_live_pipeline.py`.
+- [X] T006 [US1] Add `PublishedPayload` keyed by `(mode, event_id, updated_at, payload_sha256)` without changing legacy `PublishedVersion`; add `SourceArchive` keyed by response SHA-256 with auditable `deleted_at`, nullable `IngestionRun.query_metadata` and `source_archive_sha256`, and nullable `Quarantine.ingestion_run_id`; create a backfill-safe migration that leaves old fingerprints unknown in `backend/src/observatorio/models/publication.py`, `backend/src/observatorio/models/reference.py`, `backend/src/observatorio/models/quarantine.py`, and `backend/migrations/versions/0003_live_provenance.py`.
+- [X] T007 [US1] Change `publish_event` to fingerprint and publish the complete original GeoJSON Feature; skip only when the hash equals the latest ACKed hash for that identity, forward a changed hash even if it appeared earlier before a different hash, treat legacy `PublishedVersion` rows as unknown rather than equal, and write the ledger only after `send_and_wait` succeeds in `backend/src/observatorio/producer/publisher.py`.
+- [X] T008 [US1] Archive the complete live response atomically before extracting or publishing Features; deduplicate stored files by response SHA-256 while creating one `IngestionRun` per query with request URL, timestamps, HTTP status, count, source mode, and archive reference; schedule every 60 seconds with 5-second tolerance, 8-second request timeout, up to 3 retries at 1/2/4 seconds for network/429/5xx/unparseable responses, no retry for other 4xx, no overlap or catch-up burst, and preserve the previous successful run on errors in `backend/src/observatorio/producer/live.py`, `backend/src/observatorio/producer/source.py`, and `backend/src/observatorio/config.py`.
+- [X] T009 [US1] Test controlled feed-to-consumer persistence, archive-before-publish ordering, identical response reuse across distinct runs, failed-poll recovery, and repeat-poll idempotence against `specs/003-pipeline-sismico-completo/contracts/pipeline-message.md` in `backend/tests/integration/test_live_pipeline.py`.
 
 **Checkpoint**: Live polling and publication are traceable, duplicate-safe, and independently testable.
 
@@ -49,14 +49,14 @@
 
 ### Tests for User Story 2
 
-- [ ] T010 [P] [US2] Test that a valid GeoJSON Point with null magnitude, depth, and place is accepted, non-earthquake types are excluded with a reason, and invalid Feature/geometry/coordinates are quarantined in `backend/tests/unit/test_validation.py`.
-- [ ] T011 [P] [US2] Test exclusion/quarantine idempotency by Kafka position and offset ordering after durable persistence in `backend/tests/unit/test_pipeline_persistence.py`.
+- [X] T010 [P] [US2] Test that a valid GeoJSON Point with null magnitude, depth, and place is accepted, non-earthquake types are excluded with a reason, and invalid Feature/geometry/coordinates are quarantined in `backend/tests/unit/test_validation.py`.
+- [X] T011 [P] [US2] Test exclusion/quarantine idempotency by Kafka position and offset ordering after durable persistence in `backend/tests/unit/test_pipeline_persistence.py`.
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Validate `payload.type == "Feature"`, `geometry.type == "Point"`, required properties and coordinates, finite/range rules, and `properties.type == "earthquake"` while preserving optional nulls in `backend/src/observatorio/consumer/validation.py`.
-- [ ] T013 [US2] Persist non-earthquake exclusions with reason code `event_type_excluded`, preserve raw Kafka bytes, parsed original and `ingestion_run_id` when available, and keep the existing unique `(kafka_topic, kafka_partition, kafka_offset)` quarantine rule in `backend/src/observatorio/consumer/processor.py` and `backend/src/observatorio/models/quarantine.py`.
-- [ ] T014 [US2] Ensure invalid and excluded outcomes commit before Kafka offset advancement and database failures leave offsets uncommitted in `backend/src/observatorio/consumer/main.py` and `backend/tests/unit/test_pipeline_persistence.py`.
+- [X] T012 [US2] Validate `payload.type == "Feature"`, `geometry.type == "Point"`, required properties and coordinates, finite/range rules, and `properties.type == "earthquake"` while preserving optional nulls in `backend/src/observatorio/consumer/validation.py`.
+- [X] T013 [US2] Persist non-earthquake exclusions with reason code `event_type_excluded`, preserve raw Kafka bytes, parsed original and `ingestion_run_id` when available, and keep the existing unique `(kafka_topic, kafka_partition, kafka_offset)` quarantine rule in `backend/src/observatorio/consumer/processor.py` and `backend/src/observatorio/models/quarantine.py`.
+- [X] T014 [US2] Ensure invalid and excluded outcomes commit before Kafka offset advancement and database failures leave offsets uncommitted in `backend/src/observatorio/consumer/main.py` and `backend/tests/unit/test_pipeline_persistence.py`.
 
 **Checkpoint**: Valid, excluded, and invalid records have distinct durable outcomes; no rejected input is exposed as a valid event.
 
@@ -68,15 +68,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T015 [P] [US3] Test the five-message E1/E2 acceptance sequence, duplicate retry, stale-version replay, and exact final counts in `backend/tests/unit/test_pipeline_persistence.py`.
-- [ ] T016 [P] [US3] Test same-version changed-payload in-place replacement of normalized data, accepted Feature/hash, and run provenance, with no second version or conflict quarantine; verify legacy versions without a complete source are upgraded from the incoming Feature in `backend/tests/unit/test_pipeline_persistence.py`.
+- [X] T015 [P] [US3] Test the five-message E1/E2 acceptance sequence, duplicate retry, stale-version replay, and exact final counts in `backend/tests/unit/test_pipeline_persistence.py`.
+- [X] T016 [P] [US3] Test same-version changed-payload in-place replacement of normalized data, accepted Feature/hash, and run provenance, with no second version or conflict quarantine; verify legacy versions without a complete source are upgraded from the incoming Feature in `backend/tests/unit/test_pipeline_persistence.py`.
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Add `EventVersionSource` with primary key/FK `(mode, event_id, updated_at)` and mutable `payload_sha256`, complete Feature, and accepted run provenance; keep the hash out of `EventVersion` and do not backfill from partial legacy payloads in `backend/src/observatorio/models/events.py`, `backend/src/observatorio/models/reference.py`, and `backend/migrations/versions/0004_event_version_source.py`.
-- [ ] T018 [US3] In `persist_message`, treat same-identity/same-hash input as an idempotent duplicate; when the hash differs, atomically replace normalized fields, the single `EventVersionSource` Feature/hash/provenance, and the historical `EventVersion` payload without creating another version or conflict quarantine; preserve `EventCurrent` unless this timestamp is newer, and accept a complete incoming source for legacy rows in `backend/src/observatorio/consumer/processor.py`.
-- [ ] T019 [US3] Keep version insertion/replacement and monotonic current-row advancement atomic, and ensure exact retries after commit do not repeat effects while changed same-version payloads deterministically replace the single row in `backend/src/observatorio/consumer/processor.py`.
-- [ ] T020 [US3] Run the sequence, same-version replacement, rollback, and offset-order tests and verify migration compatibility for an existing database in `backend/tests/unit/test_pipeline_persistence.py`, `backend/tests/integration/test_live_pipeline.py`, and `backend/tests/integration/test_migrations.py`.
+- [X] T017 [US3] Add `EventVersionSource` with primary key/FK `(mode, event_id, updated_at)` and mutable `payload_sha256`, complete Feature, and accepted run provenance; keep the hash out of `EventVersion` and do not backfill from partial legacy payloads in `backend/src/observatorio/models/events.py`, `backend/src/observatorio/models/reference.py`, and `backend/migrations/versions/0004_event_version_source.py`.
+- [X] T018 [US3] In `persist_message`, treat same-identity/same-hash input as an idempotent duplicate; when the hash differs, atomically replace normalized fields, the single `EventVersionSource` Feature/hash/provenance, and the historical `EventVersion` payload without creating another version or conflict quarantine; preserve `EventCurrent` unless this timestamp is newer, and accept a complete incoming source for legacy rows in `backend/src/observatorio/consumer/processor.py`.
+- [X] T019 [US3] Keep version insertion/replacement and monotonic current-row advancement atomic, and ensure exact retries after commit do not repeat effects while changed same-version payloads deterministically replace the single row in `backend/src/observatorio/consumer/processor.py`.
+- [X] T020 [US3] Run the sequence, same-version replacement, rollback, and offset-order tests and verify migration compatibility for an existing database in `backend/tests/unit/test_pipeline_persistence.py`, `backend/tests/integration/test_live_pipeline.py`, and `backend/tests/integration/test_migrations.py`.
 
 **Checkpoint**: Duplicate and stale deliveries are idempotent; changed content with the same version identity replaces the one row and accepted source deterministically.
 
@@ -88,13 +88,13 @@
 
 ### Tests for User Story 4
 
-- [ ] T021 [US4] Test unique land match, ocean, boundary, multiple polygon matches, catalog code uniqueness, and unchanged source catalog checksum in `backend/tests/unit/test_geography.py` and `backend/tests/unit/test_catalog.py`.
+- [X] T021 [US4] Test unique land match, ocean, boundary, multiple polygon matches, catalog code uniqueness, and unchanged source catalog checksum in `backend/tests/unit/test_geography.py` and `backend/tests/unit/test_catalog.py`.
 
 ### Implementation for User Story 4
 
-- [ ] T022 [US4] Extend `Country` with nullable `name_es`, `admin`, `continent`, and `subregion` while retaining the existing three-character `country_id` PK and compatible `country_name`; add the backfill-safe Alembic migration in `backend/src/observatorio/models/reference.py` and `backend/migrations/versions/0005_country_catalog_attributes.py`.
-- [ ] T023 [US4] Load and validate the catalog's `ADM0_A3`, `NAME_ES`, `ADMIN`, `CONTINENT`, and `SUBREGION` attributes without modifying the GeoJSON or assuming ADM0_A3 is an ISO code in `backend/src/observatorio/db/catalog.py`.
-- [ ] T024 [US4] Preserve the exactly-one-spatial-match rule and return no country for zero or multiple matches, including boundaries, in `backend/src/observatorio/consumer/geography.py`; verify catalog loading and assignment in `backend/tests/unit/test_geography.py` and `backend/tests/unit/test_catalog.py`.
+- [X] T022 [US4] Extend `Country` with nullable `name_es`, `admin`, `continent`, and `subregion` while retaining the existing three-character `country_id` PK and compatible `country_name`; add the backfill-safe Alembic migration in `backend/src/observatorio/models/reference.py` and `backend/migrations/versions/0005_country_catalog_attributes.py`.
+- [X] T023 [US4] Load and validate the catalog's `ADM0_A3`, `NAME_ES`, `ADMIN`, `CONTINENT`, and `SUBREGION` attributes without modifying the GeoJSON or assuming ADM0_A3 is an ISO code in `backend/src/observatorio/db/catalog.py`.
+- [X] T024 [US4] Preserve the exactly-one-spatial-match rule and return no country for zero or multiple matches, including boundaries, in `backend/src/observatorio/consumer/geography.py`; verify catalog loading and assignment in `backend/tests/unit/test_geography.py` and `backend/tests/unit/test_catalog.py`.
 
 **Checkpoint**: Country enrichment is repeatable and ambiguous locations remain unassigned.
 
@@ -106,17 +106,17 @@
 
 ### Tests for User Story 5
 
-- [ ] T025 [P] [US5] Test month-to-subinterval subdivision at 20,000 Features, inclusive-boundary deduplication, filters, and explicit failure when a time interval cannot be further split safely in `backend/tests/unit/test_replay_source.py`.
-- [ ] T026 [P] [US5] Test archive-before-publish, checksum verification, interval state transitions, restart/resume, repeated archive reuse, retention while dependent processed data exists, and repeat-load idempotency in `backend/tests/integration/test_replay_isolation.py` and `backend/tests/unit/test_replay_source.py`.
+- [X] T025 [P] [US5] Test month-to-subinterval subdivision at 20,000 Features, inclusive-boundary deduplication, filters, and explicit failure when a time interval cannot be further split safely in `backend/tests/unit/test_replay_source.py`.
+- [X] T026 [P] [US5] Test archive-before-publish, checksum verification, interval state transitions, restart/resume, repeated archive reuse, retention while dependent processed data exists, and repeat-load idempotency in `backend/tests/integration/test_replay_isolation.py` and `backend/tests/unit/test_replay_source.py`.
 
 ### Implementation for User Story 5
 
-- [ ] T027 [US5] Add `IngestionInterval` with unique `(run_id, interval_start, interval_end)`, UTC range, filters JSON, status in `pending/archived/publishing/complete/failed`, nonnegative attempts and counts, `SourceArchive` reference, stage timestamps, and error summary; add a backfill-safe migration in `backend/src/observatorio/models/reference.py` and `backend/migrations/versions/0006_ingestion_intervals.py`.
-- [ ] T028 [US5] Replace offset-only reliance with recursive UTC interval subdivision whenever a response reaches 20,000 Features; preserve effective filters and upsert inclusive-boundary inputs by `(mode, event_id, updated_at)`, replacing the accepted source/hash if content differs, in `backend/src/observatorio/producer/replay_source.py`.
-- [ ] T029 [US5] Reuse the live `SourceArchive` mechanism to archive each historical GeoJSON response atomically to the persistent producer volume, verify SHA-256, link intervals to the archive, and clean only archives with no processed dependents while recording `deleted_at`; make archive paths configurable without secrets in `backend/src/observatorio/producer/replay.py`, `backend/src/observatorio/config.py`, and `compose.yaml`.
-- [ ] T030 [US5] Publish archived Features incrementally as complete original Features in `quakes.replay`; update each interval checkpoint only after all records are published or already acknowledged, and resume incomplete intervals after failure in `backend/src/observatorio/producer/replay.py` and `backend/src/observatorio/producer/publisher.py`.
-- [ ] T031 [US5] Add CLI support for explicit UTC start/end ranges to recover live gaps over 24 hours, while keeping year 2025, global extent, magnitude >=4, and earthquake as defaults; record exact query filters and counts in `backend/src/observatorio/producer/replay.py`.
-- [ ] T032 [US5] Verify historical archive/replay behavior across PostgreSQL/Kafka restarts, preserve live/history separation, and confirm completed intervals and current event counts survive reruns in `backend/tests/integration/test_replay_isolation.py` and `backend/tests/integration/test_live_pipeline.py`.
+- [X] T027 [US5] Add `IngestionInterval` with unique `(run_id, interval_start, interval_end)`, UTC range, filters JSON, status in `pending/archived/publishing/complete/failed`, nonnegative attempts and counts, `SourceArchive` reference, stage timestamps, and error summary; add a backfill-safe migration in `backend/src/observatorio/models/reference.py` and `backend/migrations/versions/0006_ingestion_intervals.py`.
+- [X] T028 [US5] Replace offset-only reliance with recursive UTC interval subdivision whenever a response reaches 20,000 Features; preserve effective filters and upsert inclusive-boundary inputs by `(mode, event_id, updated_at)`, replacing the accepted source/hash if content differs, in `backend/src/observatorio/producer/replay_source.py`.
+- [X] T029 [US5] Reuse the live `SourceArchive` mechanism to archive each historical GeoJSON response atomically to the persistent producer volume, verify SHA-256, link intervals to the archive, and clean only archives with no processed dependents while recording `deleted_at`; make archive paths configurable without secrets in `backend/src/observatorio/producer/replay.py`, `backend/src/observatorio/config.py`, and `compose.yaml`.
+- [X] T030 [US5] Publish archived Features incrementally as complete original Features in `quakes.replay`; update each interval checkpoint only after all records are published or already acknowledged, and resume incomplete intervals after failure in `backend/src/observatorio/producer/replay.py` and `backend/src/observatorio/producer/publisher.py`.
+- [X] T031 [US5] Add CLI support for explicit UTC start/end ranges to recover live gaps over 24 hours, while keeping year 2025, global extent, magnitude >=4, and earthquake as defaults; record exact query filters and counts in `backend/src/observatorio/producer/replay.py`.
+- [X] T032 [US5] Verify historical archive/replay behavior across PostgreSQL/Kafka restarts, preserve live/history separation, and confirm completed intervals and current event counts survive reruns in `backend/tests/integration/test_replay_isolation.py` and `backend/tests/integration/test_live_pipeline.py`.
 
 **Checkpoint**: Historical runs are traceable, resumable from durable source archives, and safe to repeat or use for gap recovery.
 
@@ -124,9 +124,9 @@
 
 **Purpose**: Verify the H5 pipeline as a whole, document its operation, and leave later query/panel work out of scope.
 
-- [ ] T033 [P] Create `docs/PIPELINE-OPERACION.md` and root `.env.example` with live/historical configuration, archive volume, deduplication and retention cleanup, legacy fingerprint handling, recovery commands, and provenance fields without adding credentials.
-- [ ] T034 Run all H5 scenarios from `specs/003-pipeline-sismico-completo/quickstart.md` against isolated tests and the five-service Compose stack; record actual commands/results in `specs/003-pipeline-sismico-completo/quickstart.md`.
-- [ ] T035 Verify no secrets or payloads are emitted in logs and no Kafka/PostgreSQL/archive service is publicly exposed in `backend/src/observatorio/logging.py` and `compose.yaml`.
+- [X] T033 [P] Create `docs/PIPELINE-OPERACION.md` and root `.env.example` with live/historical configuration, archive volume, deduplication and retention cleanup, legacy fingerprint handling, recovery commands, and provenance fields without adding credentials.
+- [X] T034 Run all H5 scenarios from `specs/003-pipeline-sismico-completo/quickstart.md` against isolated tests and the five-service Compose stack; record actual commands/results in `specs/003-pipeline-sismico-completo/quickstart.md`.
+- [X] T035 Verify no secrets or payloads are emitted in logs and no Kafka/PostgreSQL/archive service is publicly exposed in `backend/src/observatorio/logging.py` and `compose.yaml`.
 
 ---
 

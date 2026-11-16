@@ -84,6 +84,11 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
       USGS_URL: ${USGS_URL:-https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson}
       POLL_SECONDS: ${POLL_SECONDS:-60}
+      POLL_TOLERANCE_SECONDS: ${POLL_TOLERANCE_SECONDS:-5}
+      USGS_TIMEOUT_SECONDS: ${USGS_TIMEOUT_SECONDS:-8}
+      SOURCE_ARCHIVE_DIR: ${SOURCE_ARCHIVE_DIR:-/data/source-archives}
+    volumes:
+      - source_archives:${SOURCE_ARCHIVE_DIR:-/data/source-archives}
     depends_on:
       api:
         condition: service_healthy
@@ -130,3 +135,4 @@ services:
 volumes:
   postgres_data:
   kafka_data:
+  source_archives:

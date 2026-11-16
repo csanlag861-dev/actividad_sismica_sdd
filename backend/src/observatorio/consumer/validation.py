@@ -4,7 +4,7 @@ import math
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import UUID
 
 
 def _parse_datetime(value: Any) -> datetime | None:
@@ -45,16 +45,31 @@ def normalize_event(message: Any) -> tuple[bool, str | None, dict[str, Any]]:
     raw_event = message.get("payload", message)
     if not isinstance(raw_event, Mapping):
         return False, "invalid_payload", {}
+    if raw_event.get("type") != "Feature":
+        return False, "invalid_feature_type", {}
     properties = raw_event.get("properties")
     geometry = raw_event.get("geometry")
     if not isinstance(properties, Mapping):
         return False, "invalid_properties", {}
     if not isinstance(geometry, Mapping):
         return False, "invalid_geometry", {}
+    if geometry.get("type") != "Point":
+        return False, "invalid_geometry_type", {}
 
-    event_id = raw_event.get("id") or envelope.get("event_id")
+    event_id = raw_event.get("id")
     if not isinstance(event_id, str) or not event_id.strip():
         return False, "missing_event_id", {}
+    envelope_id = envelope.get("id")
+    if not isinstance(envelope_id, str) or not envelope_id.strip():
+        return False, "missing_envelope_id", {}
+    if envelope_id != event_id:
+        return False, "event_id_mismatch", {}
+
+    event_type = properties.get("type")
+    if not isinstance(event_type, str) or not event_type.strip():
+        return False, "missing_event_type", {}
+    if event_type != "earthquake":
+        return False, "event_type_excluded", {}
 
     coordinates = geometry.get("coordinates")
     if not isinstance(coordinates, (list, tuple)) or len(coordinates) < 2:
@@ -65,28 +80,39 @@ def normalize_event(message: Any) -> tuple[bool, str | None, dict[str, Any]]:
         return False, "invalid_coordinates", {}
     if not -180 <= longitude <= 180 or not -90 <= latitude <= 90:
         return False, "coordinates_out_of_range", {}
+    raw_depth = coordinates[2] if len(coordinates) > 2 else None
+    depth = _finite_float(raw_depth)
+    if raw_depth is not None and depth is None:
+        return False, "invalid_depth", {}
+
+    raw_magnitude = properties.get("mag")
+    magnitude = _finite_float(raw_magnitude)
+    if raw_magnitude is not None and magnitude is None:
+        return False, "invalid_magnitude", {}
 
     event_time = _parse_datetime(properties.get("time"))
     updated_at = _parse_datetime(properties.get("updated"))
     if event_time is None or updated_at is None:
         return False, "invalid_event_timestamps", {}
 
-    mode = envelope.get("mode", raw_event.get("mode", "live"))
+    mode = envelope.get("mode")
     if not isinstance(mode, str) or mode not in {"live", "replay"}:
         return False, "invalid_mode", {}
-    source = envelope.get("source", raw_event.get("source", "usgs"))
+    source = envelope.get("source")
     if not isinstance(source, str) or not source.strip():
         return False, "missing_source", {}
 
     run_id = envelope.get("ingestion_run_id")
     try:
-        run_uuid = UUID(str(run_id)) if run_id is not None else uuid4()
+        run_uuid = UUID(str(run_id)) if run_id is not None else None
     except (ValueError, TypeError, AttributeError):
         return False, "invalid_ingestion_run_id", {}
+    if run_uuid is None:
+        return False, "invalid_ingestion_run_id", {}
 
-    ingested_at = _parse_datetime(envelope.get("ingested_at")) or datetime.now(timezone.utc)
-    magnitude = _finite_float(properties.get("mag"))
-    depth = _finite_float(coordinates[2]) if len(coordinates) > 2 else None
+    ingested_at = _parse_datetime(envelope.get("ingested_at"))
+    if ingested_at is None:
+        return False, "invalid_ingested_at", {}
     return True, None, {
         "mode": mode,
         "event_id": event_id.strip(),

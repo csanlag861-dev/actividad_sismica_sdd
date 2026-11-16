@@ -11,7 +11,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from observatorio.consumer.geography import country_for_coordinates
 from observatorio.consumer.validation import normalize_event
 from observatorio.logging import get_logger
-from observatorio.models import CalendarDate, EventCurrent, EventVersion, IngestionRun, Quarantine
+from observatorio.models import (
+    CalendarDate,
+    EventCurrent,
+    EventVersion,
+    EventVersionSource,
+    IngestionRun,
+    Quarantine,
+)
+from observatorio.payloads import payload_fingerprint
 
 logger = get_logger("observatorio.consumer.processor")
 
@@ -43,6 +51,7 @@ async def _quarantine(
     reason: str,
     parsed_payload: dict[str, Any] | None,
     mode: str,
+    ingestion_run_id: UUID | None,
 ) -> str:
     existing = await session.scalar(
         select(Quarantine.quarantine_id).where(
@@ -56,6 +65,17 @@ async def _quarantine(
 
     event_id = None
     source = "unknown"
+    envelope = parsed_payload if isinstance(parsed_payload, dict) else {}
+    raw_run_id = envelope.get("ingestion_run_id")
+    if ingestion_run_id is None and raw_run_id is not None:
+        try:
+            ingestion_run_id = UUID(str(raw_run_id))
+        except (ValueError, TypeError, AttributeError):
+            pass
+    if ingestion_run_id is not None:
+        run = await session.get(IngestionRun, ingestion_run_id)
+        if run is None:
+            ingestion_run_id = None
     if parsed_payload:
         payload = parsed_payload.get("payload", parsed_payload)
         if isinstance(payload, dict):
@@ -75,6 +95,7 @@ async def _quarantine(
             kafka_offset=offset,
             raw_message=raw_message,
             parsed_payload=parsed_payload,
+            ingestion_run_id=ingestion_run_id,
         )
     )
     return "quarantined"
@@ -94,10 +115,19 @@ async def persist_message(
         message = None
 
     valid, reason, event = normalize_event(message)
+    topic_mode = "replay" if topic.endswith(".replay") else "live"
+    if valid and event["mode"] != topic_mode:
+        valid = False
+        reason = "topic_mode_mismatch"
+
     async with session_factory() as session:
         async with session.begin():
             if not valid:
-                mode = "replay" if topic.endswith(".replay") else "live"
+                raw_run_id = message.get("ingestion_run_id") if isinstance(message, dict) else None
+                try:
+                    quarantine_run_id = UUID(str(raw_run_id)) if raw_run_id is not None else None
+                except (ValueError, TypeError, AttributeError):
+                    quarantine_run_id = None
                 outcome = await _quarantine(
                     session,
                     raw_message=raw_message,
@@ -106,13 +136,17 @@ async def persist_message(
                     offset=offset,
                     reason=reason or "invalid_event",
                     parsed_payload=message if isinstance(message, dict) else None,
-                    mode=mode,
+                    mode=topic_mode,
+                    ingestion_run_id=quarantine_run_id,
                 )
                 return outcome
 
             version_key = (event["mode"], event["event_id"], event["updated_at"])
             existing_version = await session.get(EventVersion, version_key)
-            if existing_version is not None:
+            is_new_version = existing_version is None
+            payload_sha256 = payload_fingerprint(event["original_payload"])
+            existing_source = await session.get(EventVersionSource, version_key)
+            if existing_source is not None and existing_source.payload_sha256 == payload_sha256:
                 return "duplicate"
 
             run = await session.get(IngestionRun, event["ingestion_run_id"])
@@ -131,13 +165,59 @@ async def persist_message(
                 session.add(CalendarDate(date_utc=date_utc))
 
             country_id = country_for_coordinates(event["longitude"], event["latitude"])
-            session.add(
-                EventVersion(
+            if existing_version is None:
+                existing_version = EventVersion(
                     **event,
                     country_id=country_id,
                     date_utc=date_utc,
                 )
-            )
+                session.add(existing_version)
+            else:
+                for field in (
+                    "event_time",
+                    "magnitude",
+                    "mag_type",
+                    "place",
+                    "longitude",
+                    "latitude",
+                    "depth_km",
+                    "country_id",
+                    "date_utc",
+                    "source",
+                    "ingested_at",
+                    "ingestion_run_id",
+                    "original_payload",
+                ):
+                    setattr(
+                        existing_version,
+                        field,
+                        {
+                            "country_id": country_id,
+                            "date_utc": date_utc,
+                        }.get(field, event.get(field)),
+                    )
+
+            await session.flush()
+
+            if existing_source is None:
+                session.add(
+                    EventVersionSource(
+                        mode=event["mode"],
+                        event_id=event["event_id"],
+                        updated_at=event["updated_at"],
+                        payload_sha256=payload_sha256,
+                        original_feature=event["original_payload"],
+                        ingestion_run_id=event["ingestion_run_id"],
+                        source=event["source"],
+                        ingested_at=event["ingested_at"],
+                    )
+                )
+            else:
+                existing_source.payload_sha256 = payload_sha256
+                existing_source.original_feature = event["original_payload"]
+                existing_source.ingestion_run_id = event["ingestion_run_id"]
+                existing_source.source = event["source"]
+                existing_source.ingested_at = event["ingested_at"]
             await session.flush()
 
             current_key = (event["mode"], event["event_id"])
@@ -156,4 +236,4 @@ async def persist_message(
                     current_updated_at = current_updated_at.replace(tzinfo=timezone.utc)
                 if event["updated_at"] > current_updated_at:
                     current.current_updated_at = event["updated_at"]
-            return "persisted"
+            return "persisted" if is_new_version else "replaced"

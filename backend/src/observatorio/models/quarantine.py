@@ -3,7 +3,17 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import JSON, CheckConstraint, DateTime, LargeBinary, PrimaryKeyConstraint, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    LargeBinary,
+    PrimaryKeyConstraint,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -30,3 +40,7 @@ class Quarantine(Base):
     kafka_offset: Mapped[int] = mapped_column(nullable=False)
     raw_message: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     parsed_payload: Mapped[dict | None] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), nullable=True)
+    ingestion_run_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("ingestion_run.run_id"),
+        nullable=True,
+    )
