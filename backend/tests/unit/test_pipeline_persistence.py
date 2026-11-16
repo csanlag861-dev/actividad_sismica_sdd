@@ -146,6 +146,27 @@ async def test_invalid_message_is_quarantined_idempotently(database_sessions) ->
 
 
 @pytest.mark.asyncio
+async def test_invalid_optional_text_type_is_durably_quarantined(database_sessions) -> None:
+    invalid = json.loads(_wire_event(1_760_000_001_000))
+    invalid["payload"]["properties"]["place"] = ["not", "text"]
+    raw_message = json.dumps(invalid).encode()
+
+    assert await persist_message(
+        database_sessions,
+        raw_message,
+        topic="quakes.live",
+        partition=2,
+        offset=14,
+    ) == "quarantined"
+
+    async with database_sessions() as session:
+        rows = (await session.scalars(select(Quarantine))).all()
+    assert len(rows) == 1
+    assert rows[0].reason_code == "invalid_place"
+    assert rows[0].raw_message == raw_message
+
+
+@pytest.mark.asyncio
 async def test_offset_commit_happens_after_database_persistence(monkeypatch) -> None:
     from observatorio.consumer import main
 

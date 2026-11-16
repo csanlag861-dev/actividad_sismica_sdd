@@ -173,3 +173,9 @@
 4. **Geographic enrichment (US4)**: Persist Natural Earth attributes and ensure ambiguous events remain unassigned.
 5. **Historical completion (US5)**: Add interval archives/checkpoints, subdivision, replay reuse, and >24-hour gap recovery.
 6. **Cross-cutting finish**: Run all quickstart checks against real Compose services, document results and retention cleanup, and keep H6 API/panel work outside this feature.
+
+## Phase 9: Convergence
+
+- [X] T036 CRITICAL Remove committed database password defaults and require credentials to be supplied at runtime in `backend/src/observatorio/config.py` and `compose.yaml` per Constitution IV (contradicts).
+- [X] T037 Correct saturated historical interval subdivision so both subranges cover the original interval without omitting its right half; add assertions on requested bounds in `backend/src/observatorio/producer/replay_source.py`, `backend/src/observatorio/producer/replay.py`, and `backend/tests/unit/test_replay_source.py` per FR-015 (partial).
+- [X] T038 Validate nullable text source fields such as `magType` and `place` as string-or-null before persistence, and durably quarantine invalid types with regression tests in `backend/src/observatorio/consumer/validation.py` and `backend/tests/unit/test_validation.py` per FR-005 (partial).

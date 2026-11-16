@@ -120,6 +120,13 @@ async def test_saturated_interval_is_subdivided_and_inclusive_overlap_deduplicat
     assert {event["id"] for event in events} == {"boundary", "left", "right"}
     assert metadata["records_received"] == replay_source.PAGE_SIZE + 4
     assert requested[0]["limit"] == "20000"
+    midpoint, right_start = replay_source.split_interval(start, end)
+    assert start < midpoint < end
+    assert right_start == midpoint
+    assert requested[1]["starttime"] == "2025-01-01"
+    assert requested[1]["endtime"] == replay_source._format_timestamp(midpoint)
+    assert requested[2]["starttime"] == replay_source._format_timestamp(midpoint)
+    assert requested[2]["endtime"] == "2025-01-02"
 
 
 @pytest.mark.asyncio

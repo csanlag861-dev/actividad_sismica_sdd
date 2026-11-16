@@ -7,8 +7,8 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Settings:
     postgres_user: str = "observatorio"
-    postgres_password: str = "observatorio"
-    postgres_host: str = "postgres"
+    postgres_password: str = ""
+    postgres_host: str = ""
     postgres_port: int = 5432
     postgres_db: str = "observatorio"
     kafka_bootstrap_servers: str = "kafka:9092"
@@ -38,6 +38,8 @@ class Settings:
     def validate(self) -> None:
         if not self.postgres_host and self.database_url and self.database_url.startswith("postgresql"):
             raise ValueError("PostgreSQL host is required for PostgreSQL database URLs")
+        if self.postgres_host and not self.database_url and not self.postgres_password:
+            raise ValueError("POSTGRES_PASSWORD is required when PostgreSQL is configured")
         if self.poll_seconds <= 0 or self.poll_tolerance_seconds < 0:
             raise ValueError("live polling interval and tolerance must be positive")
         if self.usgs_timeout_seconds <= 0:
@@ -50,8 +52,8 @@ def get_settings() -> Settings:
     database_url = os.getenv("DATABASE_URL")
     return Settings(
         postgres_user=os.getenv("POSTGRES_USER", "observatorio"),
-        postgres_password=os.getenv("POSTGRES_PASSWORD", "observatorio"),
-        postgres_host=os.getenv("POSTGRES_HOST", "postgres"),
+        postgres_password=os.getenv("POSTGRES_PASSWORD", ""),
+        postgres_host=os.getenv("POSTGRES_HOST", ""),
         postgres_port=int(os.getenv("POSTGRES_PORT", "5432")),
         postgres_db=os.getenv("POSTGRES_DB", "observatorio"),
         kafka_bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),

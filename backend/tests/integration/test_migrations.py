@@ -52,6 +52,6 @@ async def test_seed_country_catalog_is_idempotent() -> None:
 def test_settings_default_to_internal_service_names() -> None:
     from observatorio.config import Settings
 
-    settings = Settings(postgres_host="postgres")
+    settings = Settings(postgres_host="postgres", postgres_password="runtime-value")
     assert "postgres:5432" in settings.postgres_dsn
     assert "kafka:9092" in settings.kafka_bootstrap_servers

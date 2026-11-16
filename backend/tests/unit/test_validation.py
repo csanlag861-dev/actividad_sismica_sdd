@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from observatorio.consumer.validation import normalize_event
 
 
@@ -37,3 +39,27 @@ def test_non_feature_geometry_and_invalid_coordinates_are_rejected(geojson_featu
     assert normalize_event(kafka_envelope(wrong_type))[1] == "invalid_feature_type"
     assert normalize_event(kafka_envelope(wrong_geometry))[1] == "invalid_geometry_type"
     assert normalize_event(kafka_envelope(bad_coordinates))[1] == "coordinates_out_of_range"
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "reason"),
+    [
+        ("magType", {"unexpected": "object"}, "invalid_mag_type"),
+        ("magType", ["unexpected", "list"], "invalid_mag_type"),
+        ("place", {"unexpected": "object"}, "invalid_place"),
+        ("place", ["unexpected", "list"], "invalid_place"),
+    ],
+)
+def test_optional_text_fields_reject_non_string_values(
+    geojson_feature,
+    kafka_envelope,
+    field: str,
+    value: object,
+    reason: str,
+) -> None:
+    feature = geojson_feature(properties={field: value})
+
+    valid, actual_reason, _ = normalize_event(kafka_envelope(feature))
+
+    assert valid is False
+    assert actual_reason == reason

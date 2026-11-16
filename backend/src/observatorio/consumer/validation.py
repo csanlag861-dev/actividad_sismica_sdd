@@ -89,6 +89,12 @@ def normalize_event(message: Any) -> tuple[bool, str | None, dict[str, Any]]:
     magnitude = _finite_float(raw_magnitude)
     if raw_magnitude is not None and magnitude is None:
         return False, "invalid_magnitude", {}
+    mag_type = properties.get("magType")
+    if mag_type is not None and not isinstance(mag_type, str):
+        return False, "invalid_mag_type", {}
+    place = properties.get("place")
+    if place is not None and not isinstance(place, str):
+        return False, "invalid_place", {}
 
     event_time = _parse_datetime(properties.get("time"))
     updated_at = _parse_datetime(properties.get("updated"))
@@ -119,8 +125,8 @@ def normalize_event(message: Any) -> tuple[bool, str | None, dict[str, Any]]:
         "updated_at": updated_at,
         "event_time": event_time,
         "magnitude": magnitude,
-        "mag_type": properties.get("magType"),
-        "place": properties.get("place"),
+        "mag_type": mag_type,
+        "place": place,
         "longitude": longitude,
         "latitude": latitude,
         "depth_km": depth,

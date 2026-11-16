@@ -2,12 +2,14 @@
 
 ## Configuración
 
-Copiar `.env.example` a `.env` y ajustar únicamente los valores de entorno
-necesarios. No añadir credenciales al archivo de ejemplo ni guardar secretos en
-Git. Las variables principales son:
+Copiar `.env.example` a `.env`, reemplazar `POSTGRES_PASSWORD` por un secreto
+aleatorio local y ajustar únicamente los valores de entorno necesarios. Compose
+falla al resolver la configuración si no se proporciona la contraseña. No
+guardar `.env` ni secretos en Git. Las variables principales son:
 
 | Variable | Predeterminado | Uso |
 |---|---:|---|
+| `POSTGRES_PASSWORD` | Obligatorio, sin valor predeterminado | Contraseña runtime de PostgreSQL, compartida con los servicios backend. |
 | `USGS_URL` | Feed GeoJSON `all_day` | Fuente live; las credenciales de una URL se eliminan de la procedencia persistida. |
 | `POLL_SECONDS` | `60` | Periodo live basado en reloj monotónico. |
 | `POLL_TOLERANCE_SECONDS` | `5` | Retraso máximo aceptado antes de registrar un deadline perdido. |

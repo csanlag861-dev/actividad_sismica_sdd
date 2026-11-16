@@ -11,6 +11,8 @@
 Desde la raíz del repositorio:
 
 ```powershell
+Copy-Item .env.example .env
+# Edita .env y sustituye POSTGRES_PASSWORD por un secreto aleatorio local.
 docker compose up --build -d
 docker compose ps
 ```

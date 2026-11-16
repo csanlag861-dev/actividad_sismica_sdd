@@ -63,7 +63,7 @@ def split_interval(start: datetime, end: datetime) -> tuple[datetime, datetime]:
     midpoint = start_utc + timedelta(milliseconds=duration_ms // 2)
     if midpoint <= start_utc or midpoint >= end_utc:
         raise ValueError("USGS response reached the limit in an interval that cannot be split safely")
-    return midpoint, end_utc
+    return midpoint, midpoint
 
 
 def _validate_query(
