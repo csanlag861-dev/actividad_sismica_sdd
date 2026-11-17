@@ -118,7 +118,7 @@ cd backend
 /tmp/actividad-sismica-venv/bin/python -m pytest -q tests
 ```
 
-Resultado: `51 passed`. La misma suite ejecutada dentro de la imagen del consumidor también terminó con `51 passed`. Incluye los casos de versiones, validación/cuarentena, offsets, catálogo geográfico, archivos y checkpoints históricos.
+Resultado en la validación de cierre del 2026-11-16: `59 passed` tanto en el entorno Python local como dentro de la imagen del consumidor. Incluye los casos de versiones, validación/cuarentena, offsets, catálogo geográfico, archivos y checkpoints históricos.
 
 La pila aislada se inició como `actividad-sismica-h5`, con nombres de contenedor únicos temporales para los cinco servicios:
 
@@ -137,6 +137,8 @@ docker compose -f compose.yaml -f compose.validation.yaml -p actividad-sismica-h
 ```
 
 Resultado: 12 intervalos mensuales archivados y completados, 18.242 mensajes replay publicados; al repetir el comando, el productor informó que la consulta ya tenía checkpoints completos y publicó 0 mensajes. También se probó `--start 2025-01-01T00:00:00Z --end 2025-01-02T00:00:00Z`: archivó 60 Features y la repetición no publicó mensajes. El override temporal de Compose se retiró al terminar esta validación.
+
+Comprobación de cierre sobre la pila Compose de desarrollo activa: los cinco servicios quedaron healthy, Alembic informó `0006_ingestion_intervals`, ambos topics Kafka tenían partición líder y el consumidor mostraba lag cero. El productor siguió archivando consultas live de 195–197 Features. El intervalo histórico UTC del 1 de enero de 2025 quedó `complete` con 60 recibidos y publicados; el archivo asociado existe en el volumen persistente y su SHA-256 coincide con `299364a0e918a75ccf17760db6b1a199551e558a85160b28d1314df765f82179`. La suite completa volvió a pasar con 59 tests tanto localmente como dentro del contenedor. La carga anual de 12 intervalos y 18.242 mensajes se validó en la pila aislada indicada arriba, no en la base de desarrollo activa.
 
 ## Limpieza
 

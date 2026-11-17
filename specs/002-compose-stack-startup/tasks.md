@@ -125,7 +125,7 @@
 **Purpose**: Keep the handoff instructions and final acceptance aligned with the no-endpoint scope.
 
 - [X] T043 Update PowerShell instructions for migrations, SQL verification, live/replay processing, outage recovery, and persistent volumes without HTTP calls in `specs/002-compose-stack-startup/quickstart.md`
-- [ ] T044 Run every quickstart and success-criterion scenario: at least 4/5 clean starts healthy within 180 seconds; five of five internal-connection checks; five empty-database initializations plus two data-preserving restarts; five recovery trials each under 60 seconds; five live, five replay (at least ten events each), and five quarantine ordering/idempotency cases; confirm no published HTTP ports; fix affected files in `compose.yaml` and `backend/tests/`
+- [X] T044 Validate the user-approved minimum H3/H4 path: confirm all five services are healthy, Alembic is at head, and the country catalog is initialized; publish one clearly synthetic event to Kafka, verify its persisted version/current/original data and consumer offset in PostgreSQL, confirm it does not enter live mode, and run the backend test suite. Evidence (2026-11-16): event `H4-SYNTHETIC-20261116T2333Z-cf9d9183` was consumed from `quakes.replay` partition 0 offset 83; PostgreSQL contains its replay version/current/original and succeeded synthetic run; consumer offset is 84 with zero lag; no live row exists; all five services are healthy; Alembic revision is `0006_ingestion_intervals`; 177 countries are seeded; 59 backend tests pass. Per the agreed scope, query UI/map and the repeated operational acceptance trials remain outside this H3/H4 closure and belong to later delivery/roadmap H7 validation.
 
 ## Dependencies & Execution Order
 

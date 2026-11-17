@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-16
 
-**Status**: Draft
+**Status**: Completed
 
 **Input**: User description: "Quiero poder completar una ingesta, procesar datos reales, reintentos sin perder procedencia ni crear eventos/versiones incorrectas ni duplicar datos. Para ello, debemos implementar el productor live de USGS y posteriormente implementar la validacion, limpieza y cuarentena del consumidor. Luego, implementar la persistenia idempotente y versionada, incorporar el catálogo y enrequicimiento geográfico y luego cargar el histórico y conservar origen. Básicamente, quiero construir el pipeline completo que se especifica en este archivo ROADMAP.md en el HITO H5. Puedes consultar la documentacion en docs si surge alguna duda ya que son nuestra fuente de verdad. En caso de que tengas dudas, puedes preguntarme."
 
