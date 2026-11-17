@@ -1,10 +1,10 @@
 # Design System — Observatorio de Actividad Sísmica
 
-**Versión:** 1.0  
+**Versión:** 1.1  
 **Estado:** Propuesta de identidad visual  
 **Proyecto:** Observatorio de Actividad Sísmica  
 **Framework:** Angular  
-**Estilo:** Dark Scientific  
+**Estilo:** Dark Scientific — Mars Station  
 **Objetivo:** Definir una identidad visual coherente para toda la aplicación y servir como referencia de diseño durante su desarrollo asistido por IA.
 
 ---
@@ -29,7 +29,7 @@ El diseño debe combinar:
 
 ### 2.1. Concepto visual
 
-La identidad visual se define como **Dark Scientific — Geospatial Observatory**.
+La identidad visual se define como **Dark Scientific — Geospatial Observatory**, con la dirección cromática **Mars Station — Óxido, cobre y arena**.
 
 La interfaz debe inspirarse en plataformas profesionales de monitorización científica, observatorios geológicos y herramientas de análisis geoespacial.
 
@@ -64,68 +64,86 @@ Las referencias sirven para orientar el diseño, no para copiar interfaces exist
 
 ## 3. Sistema de colores
 
-La aplicación tendrá dos temas: oscuro y claro.
+La identidad cromática se basa en la paleta **Mars Station — Óxido, cobre y arena**. Su combinación de fondos cálidos casi negros, superficies terrosas y acentos cobrizos debe transmitir una estética de observatorio científico, instrumentación técnica y monitorización geoespacial.
 
-El tema oscuro será el predeterminado porque representa mejor la identidad científica y tecnológica definida. El usuario podrá cambiar al tema claro desde la interfaz.
+La aplicación mantendrá dos temas:
 
-Los colores deben centralizarse mediante variables CSS o tokens de diseño y utilizarse de forma consistente.
+- **Oscuro:** Mars Station, tema principal y predeterminado. Utiliza los colores proporcionados como paleta de referencia.
+- **Claro:** tema complementario derivado de Mars Station. No forma parte de la paleta original; se define para conservar la identidad cromática cuando el usuario cambie de tema.
 
-### 3.1. Tema oscuro
+Los colores deben centralizarse mediante variables CSS o tokens de diseño. No se deben introducir colores aislados en componentes si existe un token semántico adecuado.
 
-| Token | Color | Uso |
-|---|---|---|
-| Background | #0B1120 | Fondo general |
-| Surface | #111827 | Tarjetas y paneles |
-| Surface elevated | #1E293B | Elementos elevados |
-| Surface hover | #263244 | Estados hover |
-| Border | #263244 | Separadores y bordes |
-| Text primary | #F8FAFC | Texto principal |
-| Text secondary | #94A3B8 | Texto secundario |
-| Text muted | #64748B | Información auxiliar |
-| Primary | #3B82F6 | Acciones principales |
-| Secondary | #22D3EE | Acentos científicos |
-| Accent | #818CF8 | Elementos complementarios |
-
-### 3.2. Tema claro
+### 3.1. Tema oscuro — Mars Station
 
 | Token | Color | Uso |
 |---|---|---|
-| Background | #F8FAFC | Fondo general |
-| Surface | #FFFFFF | Tarjetas y paneles |
-| Surface elevated | #F1F5F9 | Elementos elevados |
-| Surface hover | #E2E8F0 | Estados hover |
-| Border | #E2E8F0 | Separadores y bordes |
-| Text primary | #0F172A | Texto principal |
-| Text secondary | #475569 | Texto secundario |
-| Text muted | #64748B | Información auxiliar |
-| Primary | #2563EB | Acciones principales |
-| Secondary | #0891B2 | Acentos científicos |
-| Accent | #6366F1 | Elementos complementarios |
+| Background | #171311 | Fondo general de la aplicación |
+| Surface | #211A17 | Sidebar, tarjetas y paneles |
+| Surface elevated | #30231D | Modales, menús, paneles elevados y elementos superpuestos |
+| Surface hover | #3A2B23 | Hover de filas, botones secundarios y elementos interactivos |
+| Border | #49372D | Bordes, separadores y divisiones sutiles |
+| Text primary | #F8F1E9 | Texto principal y títulos |
+| Text secondary | #B8A79A | Descripciones, etiquetas y texto secundario |
+| Text muted | #8F7D70 | Metadatos y contenido auxiliar de menor prioridad |
+| Primary | #D97745 | Acciones principales y elementos destacados |
+| Secondary | #E9A66F | Acentos secundarios, enlaces destacados y elementos activos |
+| Accent | #F2C078 | Resaltados puntuales, indicadores y detalles de énfasis |
 
-Los colores semánticos deberán mantener suficiente contraste en ambos temas.
+Los tres colores de acento no deben utilizarse indiscriminadamente. `Primary` identifica la acción principal; `Secondary` complementa la jerarquía; `Accent` se reserva para resaltes concretos.
+
+### 3.2. Tema claro — Mars Station Light
+
+Esta paleta es una adaptación complementaria para mantener la identidad cálida de Mars Station en superficies claras. Los valores son tokens propuestos y podrán ajustarse tras comprobar el contraste en la interfaz real.
+
+| Token | Color | Uso |
+|---|---|---|
+| Background | #F5F0EA | Fondo general |
+| Surface | #FFFAF5 | Tarjetas y paneles |
+| Surface elevated | #F0E5DA | Elementos elevados |
+| Surface hover | #E8D9CB | Estados hover |
+| Border | #DDCBB9 | Separadores y bordes |
+| Text primary | #2A211C | Texto principal |
+| Text secondary | #66564B | Texto secundario |
+| Text muted | #8B7A6E | Información auxiliar |
+| Primary | #B9572D | Acciones principales |
+| Secondary | #A9653E | Acentos secundarios |
+| Accent | #93651F | Elementos complementarios |
+
+Los colores semánticos deberán mantener suficiente contraste en ambos temas. El tema claro no debe introducir una identidad visual independiente ni sustituir los tonos cálidos por azules o grises fríos.
 
 ### 3.3. Colores de estado
 
-| Estado | Color | Significado |
-|---|---|---|
-| Success | #22C55E | Operación correcta |
-| Warning | #F59E0B | Advertencia o revisión |
-| Danger | #EF4444 | Error o incidencia |
-| Info | #3B82F6 | Información general |
+Los colores de estado tienen una función semántica y deben distinguirse de los acentos de marca.
 
-No se deben confundir los colores semánticos de la aplicación con los utilizados para representar magnitudes o profundidades sísmicas.
+| Estado | Color oscuro | Color claro | Significado |
+|---|---|---|---|
+| Success | #78A889 | #347A50 | Operación correcta |
+| Warning | #F2C078 | #93651F | Advertencia o revisión |
+| Danger | #E47768 | #B9382B | Error o incidencia |
+| Info | #8BAFC4 | #356B87 | Información general |
+
+Los colores de estado se utilizarán de forma moderada, preferiblemente acompañados de texto o iconografía. No deben confundirse con los colores empleados para representar magnitudes o profundidades sísmicas.
 
 ### 3.4. Colores de visualización sísmica
 
 Los mapas deben diferenciar visualmente los terremotos según su profundidad, de acuerdo con el requisito funcional del proyecto.
 
-La magnitud se representará mediante el tamaño de los círculos.
+- La **magnitud** se representará mediante el tamaño de los círculos.
+- La **profundidad** se representará mediante una escala cromática continua o por intervalos claramente documentados.
+- La escala podrá inspirarse en los tonos arena, cobre y óxido de Mars Station, desde tonos claros para los intervalos menos profundos hasta tonos más oscuros para los más profundos.
+- Los valores nulos deben tener una representación diferenciada y una leyenda propia. Nunca se les asignará un valor ficticio para poder colorearlos.
 
-La profundidad se representará mediante una escala cromática continua o por intervalos claramente documentados.
+La escala cromática de profundidad debe documentarse y mantenerse igual en las diferentes visualizaciones geográficas. No se deben asignar intervalos de profundidad ni significados científicos a los colores sin que estén definidos por los requisitos o la lógica de visualización aprobada.
 
-Los valores nulos deben tener una representación diferenciada y una leyenda propia. Nunca se les asignará un valor ficticio para poder colorearlos.
+### 3.5. Reglas de aplicación cromática
 
-La misma leyenda debe mantenerse en las diferentes visualizaciones geográficas.
+- El fondo general debe mantener el tono `Background`; no utilizar el color principal como fondo de grandes superficies.
+- Las superficies se diferenciarán principalmente mediante cambios de fondo y bordes sutiles, no mediante sombras intensas.
+- Los acentos cobrizos deben reservarse para acciones, selección, navegación activa y datos destacados.
+- Los estados hover y focus deben ser perceptibles sin generar destellos ni cambios cromáticos excesivos.
+- Los textos secundarios y auxiliares deben conservar contraste suficiente; no reducir su opacidad indiscriminadamente.
+- No utilizar el color como único medio para comunicar estados, categorías o profundidad.
+- Las visualizaciones deben mantener una leyenda explícita y no reutilizar automáticamente los colores de estado para representar datos científicos.
 
 ## 4. Tipografía
 
