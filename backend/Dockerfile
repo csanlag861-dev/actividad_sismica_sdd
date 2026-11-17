@@ -12,4 +12,6 @@ COPY . /app
 
 ENV PYTHONPATH=/app/src
 
+EXPOSE 8000
+
 CMD ["python", "-m", "observatorio.api.bootstrap"]

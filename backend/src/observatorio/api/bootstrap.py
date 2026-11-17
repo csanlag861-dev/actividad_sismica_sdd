@@ -13,6 +13,7 @@ from observatorio.db.catalog import ensure_country_catalog
 from observatorio.db.session import engine, get_session
 from observatorio.logging import get_logger, redact_sensitive
 from observatorio.retry import retry_async
+from observatorio.api.readiness import is_ready, set_ready
 
 logger = get_logger("observatorio.api.bootstrap")
 REQUIRED_TABLES = {
@@ -109,37 +110,46 @@ async def _seed_catalog() -> None:
 
 
 async def bootstrap_backend() -> None:
+    set_ready(False)
     while True:
+        was_ready = is_ready()
         try:
-            await retry_async(
-                _apply_migrations,
-                destination="PostgreSQL Alembic migrations",
-                max_attempts=5,
-                base_delay=1.0,
-                max_delay=10.0,
-            )
-            await retry_async(
-                _seed_catalog,
-                destination="PostgreSQL Natural Earth country catalog",
-                max_attempts=5,
-                base_delay=1.0,
-                max_delay=10.0,
-            )
+            if not was_ready:
+                await retry_async(
+                    _apply_migrations,
+                    destination="PostgreSQL Alembic migrations",
+                    max_attempts=5,
+                    base_delay=1.0,
+                    max_delay=10.0,
+                )
+                await retry_async(
+                    _seed_catalog,
+                    destination="PostgreSQL Natural Earth country catalog",
+                    max_attempts=5,
+                    base_delay=1.0,
+                    max_delay=10.0,
+                )
         except Exception as exc:
+            set_ready(False)
             logger.error("Backend bootstrap failed; retrying: %s", type(exc).__name__)
             await asyncio.sleep(5)
             continue
 
         if await verify_database_ready() and await verify_revision_applied():
-            logger.info("Backend bootstrap is healthy at Alembic revision %s", expected_revision())
+            set_ready(True)
+            if not was_ready:
+                logger.info("Backend bootstrap is healthy at Alembic revision %s", expected_revision())
             await asyncio.sleep(10)
         else:
+            set_ready(False)
             logger.warning("Database schema is not ready; retrying bootstrap")
             await asyncio.sleep(5)
 
 
 def main() -> None:
-    asyncio.run(bootstrap_backend())
+    import uvicorn
+
+    uvicorn.run("observatorio.api.app:app", host="0.0.0.0", port=8000)
 
 
 if __name__ == "__main__":

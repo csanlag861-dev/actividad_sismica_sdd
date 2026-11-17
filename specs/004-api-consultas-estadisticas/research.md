@@ -39,7 +39,7 @@ La investigación se limita a fuentes del repositorio: la especificación aclara
 
 ### Comparación histórica
 
-- **Decision**: La comparación predeterminada es el periodo consultado actual frente al promedio diario del año UTC 2025 (`[2025-01-01, 2026-01-01)`) en modo replay. Solo se declara baseline disponible cuando los intervalos históricos completados acreditan cobertura de todo el año. Aplicar los mismos filtros de magnitud y país, incluir días sin eventos en los 365 días del denominador y devolver recuento actual, media diaria 2025, duración actual en días, tasa actual diaria y diferencia/tasa cuando la media no es cero. El periodo personalizado se compara como tasa por día, no como totales de duraciones distintas.
+- **Decision**: La comparación predeterminada es el periodo consultado actual frente al promedio diario del año UTC 2025 (`[2025-01-01, 2026-01-01)`) en modo replay. Solo se declara baseline disponible cuando los intervalos históricos completados acreditan cobertura de todo el año. Aplicar los mismos filtros de magnitud y país, incluir días sin eventos en los 365 días del denominador y devolver recuento actual, media diaria 2025, duración actual en días, tasa actual diaria y diferencia/ratio solo cuando el promedio histórico es mayor que cero. El periodo personalizado se compara como tasa por día, no como totales de duraciones distintas.
 - **Rationale**: Se alinea con el ejemplo explícito del enunciado y con la asunción de la spec; los periodos desiguales se hacen comparables, no se divide por cero y la cobertura parcial no se presenta como promedio de año completo.
 - **Alternatives considered**: Comparar solo totales de periodos distintos o descartar días sin eventos; se rechazan como sesgados y contrarios al requisito.
 

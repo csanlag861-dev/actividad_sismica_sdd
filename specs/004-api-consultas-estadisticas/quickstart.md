@@ -30,6 +30,14 @@ node --test frontend/tests/api-client.test.mjs
 
 Expected: unit tests cover boundaries/nulls/aggregations, contract tests assert JSON/status/CORS behavior, integration tests verify current-version joins, full-set aggregate reconciliation, and real PostgreSQL/schema readiness, and Node tests exercise client timeout/errors while retaining the last successful response.
 
+To run the PostgreSQL-backed API integration against the already-started Compose database without replacing the long-running API service:
+
+```bash
+docker compose run --rm --no-deps api python -m pytest -q tests/integration/test_postgresql_api.py
+```
+
+The test creates and removes a uniquely named temporary schema; it does not modify the application schema or persistent application data.
+
 ## Check events and filters
 
 With the API reachable as `http://127.0.0.1:8000`:

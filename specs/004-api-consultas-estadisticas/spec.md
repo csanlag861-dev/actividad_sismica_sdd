@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-17
 
-**Status**: Draft
+**Status**: Completed
 
 **Input**: User description: "A continuacion debemos implementar la consulta de eventos según contrato de api, implementar el endpoint de salud y estadísticas y configurar CORS y manejar el cliente. Esta tarea se centrará únicamente en estas características. En la siguiente tarea / spec nos centraremos en finalizar H6 que sería comenzar a implementar la web. Es decir, esta spec llevará a cabo R18, R19 y R20 de mi @ROADMAP.md"
 

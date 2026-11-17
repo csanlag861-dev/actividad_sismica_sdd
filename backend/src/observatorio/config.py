@@ -2,6 +2,45 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from urllib.parse import urlsplit
+
+
+DEVELOPMENT_ORIGIN = "http://localhost:4200"
+
+
+def parse_cors_origins(value: str | list[str] | None) -> list[str]:
+    if value is None or value == "":
+        configured: list[str] = []
+    elif isinstance(value, str):
+        configured = value.split(",")
+    else:
+        configured = list(value)
+
+    origins = [DEVELOPMENT_ORIGIN]
+    for raw_origin in configured:
+        origin = raw_origin.strip()
+        if not origin or origin == "*" or "*" in origin or any(char.isspace() for char in origin):
+            raise ValueError("CORS_ALLOWED_ORIGINS contains an invalid origin")
+        try:
+            parsed = urlsplit(origin)
+            hostname = parsed.hostname
+            parsed.port
+        except ValueError:
+            raise ValueError("CORS_ALLOWED_ORIGINS contains an invalid origin") from None
+        if (
+            parsed.scheme != "https"
+            or hostname is None
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path
+            or parsed.query
+            or parsed.fragment
+            or "?" in origin
+            or "#" in origin
+        ):
+            raise ValueError("CORS_ALLOWED_ORIGINS contains an invalid origin")
+        origins.append(origin)
+    return list(dict.fromkeys(origins))
 
 
 @dataclass(frozen=True)
@@ -19,6 +58,7 @@ class Settings:
     source_archive_dir: str = "/data/source-archives"
     replay_interval_seconds: int = 2
     database_url: str | None = None
+    cors_allowed_origins: str = ""
 
     @property
     def postgres_dsn(self) -> str:
@@ -64,6 +104,7 @@ def get_settings() -> Settings:
         source_archive_dir=os.getenv("SOURCE_ARCHIVE_DIR", "/data/source-archives"),
         replay_interval_seconds=int(os.getenv("REPLAY_INTERVAL_SECONDS", "2")),
         database_url=database_url,
+        cors_allowed_origins=os.getenv("CORS_ALLOWED_ORIGINS", ""),
     )
 
 

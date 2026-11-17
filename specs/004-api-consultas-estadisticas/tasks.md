@@ -16,7 +16,7 @@
 
 **Purpose**: Add the runtime dependencies required to expose the already-planned API over HTTP.
 
-- [ ] T001 Add pinned FastAPI and Uvicorn dependencies to `backend/requirements.txt`, retaining the existing SQLAlchemy, asyncpg, httpx, and test dependencies.
+- [X] T001 Add pinned FastAPI and Uvicorn dependencies to `backend/requirements.txt`, retaining the existing SQLAlchemy, asyncpg, httpx, and test dependencies.
 
 ---
 
@@ -24,8 +24,8 @@
 
 **Purpose**: Make the existing `api` Compose service capable of starting the application and serving HTTP before any endpoint story is implemented.
 
-- [ ] T002 Implement the FastAPI application factory and startup/lifespan integration in `backend/src/observatorio/api/app.py` and `backend/src/observatorio/api/bootstrap.py` so HTTP serving does not wait for a successful database connection or schema bootstrap. Run/retry bootstrap independently of accepting requests, and keep readiness false until database and required schema checks pass, allowing `/api/salud` to return HTTP 503 while they are unavailable.
-- [ ] T003 Update the `api` command/container port declaration in `backend/Dockerfile` and publish the service in `compose.yaml` so Uvicorn serves on `0.0.0.0:8000` inside the existing `api` service while binding only `127.0.0.1:8000:8000` on the host, without adding a sixth service or exposing PostgreSQL/Kafka.
+- [X] T002 Implement the FastAPI application factory and startup/lifespan integration in `backend/src/observatorio/api/app.py` and `backend/src/observatorio/api/bootstrap.py` so HTTP serving does not wait for a successful database connection or schema bootstrap. Run/retry bootstrap independently of accepting requests, and keep readiness false until database and required schema checks pass, allowing `/api/salud` to return HTTP 503 while they are unavailable.
+- [X] T003 Update the `api` command/container port declaration in `backend/Dockerfile` and publish the service in `compose.yaml` so Uvicorn serves on `0.0.0.0:8000` inside the existing `api` service while binding only `127.0.0.1:8000:8000` on the host, without adding a sixth service or exposing PostgreSQL/Kafka.
 
 **Checkpoint**: The API process starts inside the existing Compose service, applies required startup setup, and is reachable on the configured local API port.
 
@@ -39,16 +39,16 @@
 
 ### Tests for User Story 1
 
-- [ ] T004 [P] [US1] Specify `/api/eventos` response fields, temporal/filter boundaries, complete untruncated results when no limit is configured, empty-result behavior, 400 malformed-syntax and 422 invalid/unknown-parameter statuses, the common safe JSON error envelope, and storage-failure status in `backend/tests/contract/test_api_contract.py`.
-- [ ] T005 [P] [US1] Specify UTC normalization, `[start, end)` filtering, inclusive `min_mag`, exact country matching, rejection of unknown parameters, and null-magnitude exclusion in `backend/tests/unit/test_api_queries.py`.
-- [ ] T006 [P] [US1] Add database integration coverage for current-version joins, live/replay isolation, complete untruncated event results, and successful empty results in `backend/tests/integration/test_event_query_database.py`.
+- [X] T004 [P] [US1] Specify `/api/eventos` response fields, temporal/filter boundaries, complete untruncated results when no limit is configured, empty-result behavior, 400 malformed-syntax and 422 invalid/unknown-parameter statuses, the common safe JSON error envelope, and storage-failure status in `backend/tests/contract/test_api_contract.py`.
+- [X] T005 [P] [US1] Specify UTC normalization, `[start, end)` filtering, inclusive `min_mag`, exact country matching, rejection of unknown parameters, and null-magnitude exclusion in `backend/tests/unit/test_api_queries.py`.
+- [X] T006 [P] [US1] Add database integration coverage for current-version joins, live/replay isolation, complete untruncated event results, and successful empty results in `backend/tests/integration/test_event_query_database.py`.
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Define validated query parameters and shared UTC filter normalization in `backend/src/observatorio/api/schemas.py`, rejecting malformed request syntax with HTTP 400 and unknown parameters or invalid ISO 8601 values, non-finite magnitude, `start >= end`, and malformed country identifiers with HTTP 422 using the common error envelope.
-- [ ] T008 [US1] Implement current-live query functions in `backend/src/observatorio/api/queries.py`, joining `event_current` to its referenced `(mode, event_id, updated_at)` version and applying the same AND-combined filters with defaults `[now_utc - 24h, now_utc)`.
-- [ ] T009 [US1] Implement `GET /api/eventos` serialization and route in `backend/src/observatorio/api/routes.py`, returning one current live Feature per event, the required collection metadata, epoch-millisecond UTC times, and a valid 2D Point plus `properties.depth_km: null` when depth is unknown.
-- [ ] T010 [US1] Register the event router and common JSON error handling for query/storage failures in `backend/src/observatorio/api/app.py` and `backend/src/observatorio/api/routes.py`, ensuring successful empty results remain distinct from errors and failures never return an empty success-shaped collection or expose internal details.
+- [X] T007 [US1] Define validated query parameters and shared UTC filter normalization in `backend/src/observatorio/api/schemas.py`, rejecting malformed request syntax with HTTP 400 and unknown parameters or invalid ISO 8601 values, non-finite magnitude, `start >= end`, and malformed country identifiers with HTTP 422 using the common error envelope.
+- [X] T008 [US1] Implement current-live query functions in `backend/src/observatorio/api/queries.py`, joining `event_current` to its referenced `(mode, event_id, updated_at)` version and applying the same AND-combined filters with defaults `[now_utc - 24h, now_utc)`.
+- [X] T009 [US1] Implement `GET /api/eventos` serialization and route in `backend/src/observatorio/api/routes.py`, returning one current live Feature per event, the required collection metadata, epoch-millisecond UTC times, and a valid 2D Point plus `properties.depth_km: null` when depth is unknown.
+- [X] T010 [US1] Register the event router and common JSON error handling for query/storage failures in `backend/src/observatorio/api/app.py` and `backend/src/observatorio/api/routes.py`, ensuring successful empty results remain distinct from errors and failures never return an empty success-shaped collection or expose internal details.
 
 **Checkpoint**: User Story 1 is independently consumable through the event collection contract; no health, statistics, or visual panel work is required for this increment.
 
@@ -62,17 +62,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T011 [P] [US2] Specify `/api/salud` HTTP 200/503 behavior, including a failed/unavailable startup bootstrap while the HTTP server is serving, status fields, null last-ingestion behavior, stale-ingestion behavior, and absence of sensitive response details in `backend/tests/contract/test_health_contract.py`.
-- [ ] T012 [P] [US2] Specify statistics response groups, shared-filter semantics, fixed UTC hourly boundaries, null populations, semi-open bins aligned to integer multiples of their widths, baseline coverage, zero-day denominator, and distribution percentages calculated from `valid_count` with `missing_count` excluded and reported separately in `backend/tests/unit/test_statistics.py`.
-- [ ] T013 [P] [US2] Specify `/api/estadisticas` response shape, valid zero counts, bin-count reconciliation to `valid_count`, percentages based on valid values (null when none are valid), magnitude's pre-`min_mag` missing-count population, explicit storage failures, and the common non-success error envelope in `backend/tests/contract/test_statistics_contract.py`.
-- [ ] T014 [P] [US2] Add database integration coverage for health/schema readiness, statistics reconciled against the complete matching current-event set (not an event-response sample), replay baseline coverage, and missing-baseline behavior in `backend/tests/integration/test_statistics_database.py`.
+- [X] T011 [P] [US2] Specify `/api/salud` HTTP 200/503 behavior, including a failed/unavailable startup bootstrap while the HTTP server is serving, status fields, null last-ingestion behavior, stale-ingestion behavior, and absence of sensitive response details in `backend/tests/contract/test_health_contract.py`.
+- [X] T012 [P] [US2] Specify statistics response groups, shared-filter semantics, fixed UTC hourly boundaries, null populations, semi-open bins aligned to integer multiples of their widths, baseline coverage, zero-day denominator, and distribution percentages calculated from `valid_count` with `missing_count` excluded and reported separately in `backend/tests/unit/test_statistics.py`.
+- [X] T013 [P] [US2] Specify `/api/estadisticas` response shape, valid zero counts, bin-count reconciliation to `valid_count`, percentages based on valid values (null when none are valid), magnitude's pre-`min_mag` missing-count population, explicit storage failures, and the common non-success error envelope in `backend/tests/contract/test_statistics_contract.py`.
+- [X] T014 [P] [US2] Add database integration coverage for health/schema readiness, statistics reconciled against the complete matching current-event set (not an event-response sample), replay baseline coverage, and missing-baseline behavior in `backend/tests/integration/test_statistics_database.py`.
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Implement the health query and `GET /api/salud` route in `backend/src/observatorio/api/queries.py` and `backend/src/observatorio/api/routes.py`, returning HTTP 200 only when PostgreSQL and the required schema are available, HTTP 503 otherwise (including while bootstrap/readiness is unavailable), and the latest successful live USGS `request_end` or null without secrets.
-- [ ] T016 [US2] Implement current-live hourly, country, magnitude, and depth aggregation functions in `backend/src/observatorio/api/statistics.py`, using shared filters, UTC `[HH:00, HH+1:00)` buckets, semi-open bins aligned to integer multiples of width 0.5 for magnitude and 10 km for depth, per-distribution valid denominators/percentages, and missing magnitude counts from the selected period/country scope before `min_mag`.
-- [ ] T017 [US2] Implement historical comparison in `backend/src/observatorio/api/statistics.py` from replay current events and completed ingestion intervals, treating the baseline as available only with full 2025 coverage and otherwise returning an explicit unavailable baseline rather than zero.
-- [ ] T018 [US2] Implement `GET /api/estadisticas` in `backend/src/observatorio/api/routes.py`, documenting period, normalized filters, units, missing counts, current-period daily rate, 365-day 2025 mean including zero-event days, and explicit query errors.
+- [X] T015 [US2] Implement the health query and `GET /api/salud` route in `backend/src/observatorio/api/queries.py` and `backend/src/observatorio/api/routes.py`, returning HTTP 200 only when PostgreSQL and the required schema are available, HTTP 503 otherwise (including while bootstrap/readiness is unavailable), and the latest successful live USGS `request_end` or null without secrets.
+- [X] T016 [US2] Implement current-live hourly, country, magnitude, and depth aggregation functions in `backend/src/observatorio/api/statistics.py`, using shared filters, UTC `[HH:00, HH+1:00)` buckets, semi-open bins aligned to integer multiples of width 0.5 for magnitude and 10 km for depth, per-distribution valid denominators/percentages, and missing magnitude counts from the selected period/country scope before `min_mag`.
+- [X] T017 [US2] Implement historical comparison in `backend/src/observatorio/api/statistics.py` from replay current events and completed ingestion intervals, treating the baseline as available only with full 2025 coverage, including all 365 days, and reporting daily-rate difference/ratio only when the available baseline is greater than zero.
+- [X] T018 [US2] Implement `GET /api/estadisticas` in `backend/src/observatorio/api/routes.py`, documenting period, normalized filters, units, missing counts, current-period daily rate, 365-day 2025 mean including zero-event days, and explicit query errors.
 
 **Checkpoint**: User Story 2 is independently consumable using the API after the P1 event query increment and does not depend on visual charts or tables.
 
@@ -86,13 +86,13 @@
 
 ### Tests for User Story 3
 
-- [ ] T019 [P] [US3] Specify allowed-origin preflight, GET/OPTIONS methods, `ngrok-skip-browser-warning`, denied unlisted origins, explicit failure for malformed/wildcard/non-HTTPS production-origin configuration without partial application, and distinction between browser transport/CORS failure and an accessible API HTTP error in `backend/tests/contract/test_cors_contract.py`.
-- [ ] T020 [P] [US3] Specify the transport module's 15-second timeout, empty-versus-error distinction, last-success retention including exposure of the retained `metadata.last_ingestion` to its consumer after a later request fails, recovery on a later caller-initiated success (replace data, clear error/staleness, and allow further requests), and cancellation of an active request when disposed in `frontend/tests/api-client.test.mjs`; do not test or implement automatic retries or a periodic refresh timer.
+- [X] T019 [P] [US3] Specify allowed-origin preflight, GET/OPTIONS methods, `ngrok-skip-browser-warning`, denied unlisted origins, explicit failure for malformed/wildcard/non-HTTPS production-origin configuration without partial application, and distinction between browser transport/CORS failure and an accessible API HTTP error in `backend/tests/contract/test_cors_contract.py`.
+- [X] T020 [P] [US3] Specify the transport module's 15-second timeout, empty-versus-error distinction, last-success retention including exposure of the retained `metadata.last_ingestion` to its consumer after a later request fails, recovery on a later caller-initiated success (replace data, clear error/staleness, and allow further requests), and cancellation of an active request when disposed in `frontend/tests/api-client.test.mjs`; do not test or implement automatic retries or a periodic refresh timer.
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Parse and validate the configurable production-origin list plus the `http://localhost:4200` default in `backend/src/observatorio/config.py`; reject invalid, wildcard, credentialed, non-HTTPS production or non-origin values explicitly without silently dropping entries or applying a partial list, then configure CORS in `backend/src/observatorio/api/app.py` for GET/OPTIONS and `ngrok-skip-browser-warning` without credentials.
-- [ ] T022 [US3] Add the public API URL configuration without credentials to `frontend/public/config.json`, and implement the native-fetch transport module in `frontend/src/api-client.mjs` with a 15-second timeout, typed distinction between transport failure and accessible API HTTP error, last-success retention including `metadata.last_ingestion` exposed to its consumer, and recoverable error/staleness state that clears on a later caller-initiated success; do not add automatic retries, periodic refresh, or visual UI.
+- [X] T021 [US3] Parse and validate the configurable production-origin list plus the `http://localhost:4200` default in `backend/src/observatorio/config.py`; reject invalid, wildcard, credentialed, non-HTTPS production or non-origin values explicitly without silently dropping entries or applying a partial list, then configure CORS in `backend/src/observatorio/api/app.py` for GET/OPTIONS and `ngrok-skip-browser-warning` without credentials.
+- [X] T022 [US3] Add the public API URL configuration without credentials to `frontend/public/config.json`, and implement the native-fetch transport module in `frontend/src/api-client.mjs` with a 15-second timeout, typed distinction between transport failure and accessible API HTTP error, last-success retention including `metadata.last_ingestion` exposed to its consumer, and recoverable error/staleness state that clears on a later caller-initiated success; do not add automatic retries, periodic refresh, or visual UI.
 
 **Checkpoint**: User Story 3 completes browser transport and CORS only; map, event details, visible filters, tables, and charts remain out of scope.
 
@@ -102,9 +102,9 @@
 
 **Purpose**: Keep the published contract and operator validation guide aligned with the implemented requirements.
 
-- [ ] T023 [P] Update `docs/CONTRATO-API.md` with the final event, health, statistics (including valid-value denominators and missing-value handling), common validation/error envelope, and availability response shapes established by the three user stories.
-- [ ] T024 [P] Update `docs/README.md` with the actual client configuration, API reachability, exact multi-origin CORS setup and invalid-configuration behavior, and distinction between browser transport/CORS failures and API HTTP failures, without documenting secrets.
-- [ ] T025 Run the focused backend unit/contract/integration tests, `node --test frontend/tests/api-client.test.mjs`, and the scenarios in `specs/004-api-consultas-estadisticas/quickstart.md`; resolve any contract mismatch in the owning user-story task before marking this validation task complete.
+- [X] T023 [P] Update `docs/CONTRATO-API.md` with the final event, health, statistics (including valid-value denominators and missing-value handling), common validation/error envelope, and availability response shapes established by the three user stories.
+- [X] T024 [P] Update `docs/README.md` with the actual client configuration, API reachability, exact multi-origin CORS setup and invalid-configuration behavior, and distinction between browser transport/CORS failures and API HTTP failures, without documenting secrets.
+- [X] T025 Run the focused backend unit/contract/integration tests, `node --test frontend/tests/api-client.test.mjs`, and the scenarios in `specs/004-api-consultas-estadisticas/quickstart.md`; resolve any contract mismatch in the owning user-story task before marking this validation task complete.
 
 ---
 
@@ -186,3 +186,13 @@ Task: T020 client transport requirements in frontend/tests/api-client.test.mjs
 - `[P]` appears only where tasks operate on independent files and have no unfinished prerequisites.
 - Tests remain grouped under their owning user story; no extra service, schema, or visualization tasks are included.
 - `docs/README.md` references `frontend/public/config.json`, but the file is absent in the current repository snapshot; T022 creates it as part of the client story.
+
+## Phase 7: Convergence
+
+- [X] T026 Verify historical ingestion interval filters in `backend/src/observatorio/api/statistics.py` before declaring the 2025 baseline available for a requested magnitude population; return an unavailable baseline when completed replay coverage does not include the requested population, and cover the replay source minimum-magnitude boundary in `backend/tests/integration/test_statistics_database.py` per FR-010 and the historical-comparison plan decision.
+- [X] T027 Add a reusable public-config loader in `frontend/src/api-client.mjs` that reads and validates `frontend/public/config.json` and supplies `apiBaseUrl` to the transport client; test that changing the public URL changes the request endpoint and that configuration contains no credentials or secrets per FR-014 and SC-006.
+- [X] T028 Validate `country_id` against the persisted country catalog in `backend/src/observatorio/api/schemas.py` or the query dependency and return the common HTTP 422 error envelope for an unknown catalog code; cover a well-formed but unknown code in `backend/tests/contract/test_api_contract.py` per FR-003 and US1/AC3.
+- [X] T029 Prevent user-supplied unknown query parameter names from being reflected unbounded in public error details; use only safe parameter identifiers or a generic safe detail in `backend/src/observatorio/api/schemas.py` and cover arbitrary/long names in `backend/tests/unit/test_api_queries.py` per FR-016.
+- [X] T030 Complete event-filter and CORS acceptance coverage in `backend/tests/contract/test_api_contract.py` and `backend/tests/contract/test_cors_contract.py`: prove the default 24-hour window, inclusive start/exclusive end, inclusive minimum magnitude with null exclusion, and preflight plus GET access from both configured production and development origins per SC-001, SC-004, T005 and T019.
+- [X] T031 Add a PostgreSQL-backed integration path for the API query, health/schema readiness and statistics scenarios in `backend/tests/integration/`, then run the corresponding Compose and curl checks from `specs/004-api-consultas-estadisticas/quickstart.md` per the plan testing decision and T025.
+- [X] T032 Complete `docs/CONTRATO-API.md` with the explicit HTTP 200/503 health response bodies and the statistics response shape, including baseline availability and distribution fields, per T023 and FR-007–FR-010.

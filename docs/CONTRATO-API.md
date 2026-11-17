@@ -53,6 +53,8 @@ Cada distribución informa `valid_count` y `missing_count`. Los bins semiabierto
 
 ### Errores de consulta
 
+Las estadísticas históricas comparan tasas diarias, no totales de periodos de distinta duración. Si existe cobertura completa de 2025 y el promedio histórico es mayor que cero, se incluyen `daily_rate_difference` (tasa actual menos tasa histórica) y `daily_rate_ratio` (tasa actual dividida por tasa histórica). Con baseline no disponible o promedio histórico cero, estos campos se omiten.
+
 Las respuestas de error de eventos y estadísticas usan un envelope JSON común con códigos y mensajes estables:
 
 ```json
@@ -75,6 +77,120 @@ Las respuestas de error de eventos y estadísticas usan un envelope JSON común 
 | 422 | `invalid_request` | `Request parameters are invalid` |
 | 500 | `internal_error` | `The request could not be completed` |
 | 503 en consultas | `dependency_unavailable` | `A required service is unavailable` |
+
+### GET /api/salud
+
+Con la API, la base de datos y la revisión de esquema disponibles, responde HTTP 200:
+
+```json
+{
+  "status": "ok",
+  "last_ingestion": 1793113140000
+}
+```
+
+`last_ingestion` es la fecha de la última ingesta live correcta en milisegundos Unix UTC, o `null` si todavía no existe. La antigüedad de esa fecha no cambia el estado de salud. Si la base de datos o el esquema requerido no están disponibles, responde HTTP 503 con este cuerpo específico:
+
+```json
+{
+  "status": "unavailable",
+  "last_ingestion": null
+}
+```
+
+La respuesta de salud no contiene credenciales ni detalles internos.
+
+### GET /api/estadisticas
+
+Una respuesta HTTP 200 incluye el periodo y filtros aplicados, las series por hora UTC, los recuentos por país, las distribuciones y la comparación con el baseline. Cada distribución expresa su unidad, anchura de bin, recuento válido usado como denominador, ausentes y bins semiabiertos:
+
+```json
+{
+  "period": {
+    "start": "2026-11-17T11:00:00Z",
+    "end": "2026-11-17T13:00:00Z"
+  },
+  "filters": {
+    "min_mag": 4.0,
+    "country_id": null
+  },
+  "hourly_counts": {
+    "unit": "events/hour (UTC)",
+    "missing_count": 0,
+    "buckets": [
+      {"start": "2026-11-17T11:00:00Z", "count": 2},
+      {"start": "2026-11-17T12:00:00Z", "count": 1}
+    ]
+  },
+  "country_counts": {
+    "unit": "events",
+    "missing_count": 1,
+    "buckets": [
+      {"country_id": null, "country_name": "Sin país asignado", "count": 1},
+      {"country_id": "ESP", "country_name": "España", "count": 2}
+    ]
+  },
+  "distributions": {
+    "magnitude": {
+      "unit": "magnitude",
+      "bin_width": 0.5,
+      "valid_count": 3,
+      "missing_count": 0,
+      "buckets": [
+        {
+          "min_inclusive": 4.0,
+          "max_exclusive": 4.5,
+          "count": 2,
+          "percentage": 66.6666666667
+        },
+        {
+          "min_inclusive": 4.5,
+          "max_exclusive": 5.0,
+          "count": 1,
+          "percentage": 33.3333333333
+        }
+      ]
+    },
+    "depth_km": {
+      "unit": "km",
+      "bin_width": 10,
+      "valid_count": 2,
+      "missing_count": 1,
+      "buckets": [
+        {
+          "min_inclusive": 0,
+          "max_exclusive": 10,
+          "count": 1,
+          "percentage": 50.0
+        },
+        {
+          "min_inclusive": 10,
+          "max_exclusive": 20,
+          "count": 1,
+          "percentage": 50.0
+        }
+      ]
+    }
+  },
+  "historical_comparison": {
+    "baseline_period": {
+      "start": "2025-01-01T00:00:00Z",
+      "end": "2026-01-01T00:00:00Z"
+    },
+    "baseline_days": 365,
+    "baseline_available": true,
+    "current_count": 3,
+    "current_period_days": 0.0833333333,
+    "current_daily_average": 36.0,
+    "historical_daily_average": 2.0,
+    "unit": "events/day",
+    "daily_rate_difference": 34.0,
+    "daily_rate_ratio": 18.0
+  }
+}
+```
+
+Si no hay cobertura histórica completa para el año y la población de magnitud solicitada, `baseline_available` es `false` y `historical_daily_average` es `null`; las diferencias y el ratio diario se omiten. Una distribución con `valid_count` igual a cero devuelve `buckets: []`; cualquier porcentaje calculable con denominador cero es `null` (no se emiten bins sin eventos). Cuando existe baseline pero su promedio es cero, también se omiten la diferencia y el ratio. Los fallos de consulta conservan el envelope de error común descrito arriba, no una agregación con ceros.
 
 ## Acceso desde Netlify
 

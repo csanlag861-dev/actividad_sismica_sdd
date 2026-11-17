@@ -35,7 +35,7 @@ El componente sustituye la capa de eventos en cada respuesta: no acumula una cop
 
 ## 3. Conectar la API
 
-El backend completo debe ejecutarse en Docker: productor Python, consumidor Python, Kafka, PostgreSQL y API FastAPI, como cinco servicios de Compose. El alumnado debe crear sus Dockerfile(s) y `compose.yaml`; este paquete aporta la base del frontend, no un backend implementado.
+El backend completo se ejecuta en Docker: productor Python, consumidor Python, Kafka, PostgreSQL y API FastAPI, como cinco servicios de Compose. La API publica el puerto 8000 en `127.0.0.1` para el túnel local y escucha en `0.0.0.0:8000` dentro del contenedor.
 
 Una vez implementados esos archivos, arranca los servicios:
 
@@ -61,20 +61,17 @@ No uses `localhost:8000` desde el contenedor de ngrok: apuntaría al propio cont
 
 **HTTPS sin certificados en FastAPI.** La dirección pública es HTTPS y ngrok proporciona y renueva el certificado. La conexión con el agente también está cifrada; el agente puede comunicarse con la API por HTTP dentro del equipo o de la red Docker. No hace falta configurar certificados en Uvicorn ni añadir un proxy TLS para esta práctica. El plan gratuito tiene cuotas de uso.
 
-Cambia `frontend/public/config.json`:
+Cambia `frontend/public/config.json` a la URL HTTPS de la API publicada:
 
 ```json
 {
-  "mode": "api",
-  "apiUrl": "https://TU-DOMINIO-ASIGNADO",
-  "refreshMs": 60000,
-  "skipNgrokWarning": true
+  "apiBaseUrl": "https://TU-DOMINIO-ASIGNADO"
 }
 ```
 
-`apiUrl` no termina en `/api`: el componente añade `/api/eventos`. Usa el dominio asignado realmente a tu cuenta. Recarga la página después de cambiar la configuración. Configura CORS en el backend. Una llamada OPTIONS puede preceder al GET por la cabecera de ngrok; no la bloquees.
+`apiBaseUrl` no termina en `/api`: el módulo de transporte consulta `/api/eventos`. Usa el dominio asignado realmente a tu cuenta. Recarga la página después de cambiar la configuración. La configuración es pública y no debe contener credenciales, tokens ni secretos. CORS permite `http://localhost:4200` y la lista exacta de orígenes HTTPS definida mediante `CORS_ALLOWED_ORIGINS`, separada por comas. No se admiten comodines, credenciales, rutas ni valores inválidos; una configuración inválida impide el arranque en lugar de aplicar una lista parcial. Una llamada OPTIONS puede preceder al GET por la cabecera de ngrok; no la bloquees.
 
-La consulta se programa después de terminar la anterior, evitando peticiones solapadas. El timeout es de 15 segundos. Si falla, se conserva la capa anterior y se muestra un aviso. Al destruir el componente se cancela la petición y el temporizador. La interfaz inicial muestra cuándo se leyó y generó la respuesta; añade la última ingesta real de USGS para detectar un productor parado.
+El módulo aislado `frontend/src/api-client.mjs` solo ofrece transporte y estado de consulta, no construye una interfaz ni programa refrescos. Cada consulta tiene un timeout de 15 segundos. Distingue errores HTTP accesibles de errores de transporte sin respuesta accesible (que pueden deberse a red o CORS), conserva la última respuesta correcta ante un fallo y limpia el error/desactualización si una consulta posterior iniciada por el consumidor tiene éxito. Las respuestas HTTP de error siguen el envelope documentado en `CONTRATO-API.md`.
 
 ## 4. Publicar en Netlify
 
