@@ -1,0 +1,126 @@
+.events-page {
+  display: grid;
+  gap: 20px;
+}
+
+.page-heading,
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.eyebrow,
+.section-title span {
+  color: var(--color-text-muted);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.eyebrow {
+  margin: 0;
+}
+
+h1 {
+  margin: 8px 0 7px;
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 580;
+  letter-spacing: -0.035em;
+}
+
+.lede,
+.loading-note,
+.truncated-note {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.lede {
+  margin: 0;
+}
+
+.refresh-button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.query-error {
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+  border: 1px solid var(--color-danger);
+  border-radius: 8px;
+  color: var(--color-danger);
+  font-size: 11px;
+}
+
+.map-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.34fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.map-column {
+  display: grid;
+  gap: 10px;
+}
+
+.section-title h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.section-title span {
+  letter-spacing: normal;
+}
+
+.truncated-note {
+  margin: 0;
+  color: var(--color-warning);
+  font-size: 11px;
+}
+
+.query-context {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.query-context h2,
+.query-context p {
+  margin: 0;
+}
+
+.query-context h2 {
+  color: var(--color-text-primary);
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .map-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 580px) {
+  .page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

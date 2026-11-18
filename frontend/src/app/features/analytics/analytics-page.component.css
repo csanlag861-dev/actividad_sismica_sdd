@@ -1,0 +1,88 @@
+.analytics-page {
+  display: grid;
+  gap: 20px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+h1 {
+  margin: 8px 0 7px;
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 580;
+  letter-spacing: -0.035em;
+}
+
+.lede,
+.loading-note,
+.stale-note,
+.unavailable-panel p {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.lede {
+  margin: 0;
+}
+
+.refresh-button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.query-error {
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+  border: 1px solid var(--color-danger);
+  border-radius: 8px;
+  color: var(--color-danger);
+  font-size: 11px;
+}
+
+.stale-note {
+  margin: 0;
+  color: var(--color-warning);
+}
+
+.unavailable-panel {
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-surface);
+}
+
+.unavailable-panel h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.unavailable-panel p {
+  margin: 7px 0 0;
+}
+
+@media (max-width: 600px) {
+  .page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,17 @@
+<div class="resource-status" aria-live="polite">
+  @if (snapshot.status === "loading") {
+    <span class="loading">Actualizando {{ label }}…</span>
+  }
+  @if (snapshot.status === "error") {
+    <span class="error" role="alert">Error al consultar {{ label }}: {{ snapshot.error?.message }}</span>
+  }
+  @if (snapshot.possiblyStale) {
+    <span class="stale">Se conserva la última lectura correcta; puede estar desactualizada.</span>
+  }
+  @if (empty && snapshot.status !== "error") {
+    <span class="empty">La consulta se completó sin resultados.</span>
+  }
+  @if (truncated) {
+    <span class="limited">La respuesta está truncada; no se presenta como el total del universo.</span>
+  }
+</div>

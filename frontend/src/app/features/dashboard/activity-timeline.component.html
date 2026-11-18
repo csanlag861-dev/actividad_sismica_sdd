@@ -1,0 +1,60 @@
+<section class="timeline panel" aria-labelledby="timeline-title">
+  <div class="section-heading">
+    <div>
+      <span class="label">ACTIVIDAD TEMPORAL</span>
+      <h2 id="timeline-title">Eventos por hora</h2>
+    </div>
+    <span class="unit">{{ statistics.hourly_counts.unit }}</span>
+  </div>
+
+  <p class="context">
+    Periodo estadístico: {{ statistics.period.start | date: "medium" : "UTC" }} –
+    {{ statistics.period.end | date: "medium" : "UTC" }} UTC
+  </p>
+  <p class="context">
+    Filtros: {{
+      statistics.filters.min_mag === null
+        ? "Sin magnitud mínima"
+        : "Magnitud mínima ≥ " + statistics.filters.min_mag
+    }}
+    · {{ statistics.filters.country_id ?? "Todos los países" }}
+    · {{ statistics.hourly_counts.missing_count }} sin hora conocida
+  </p>
+
+  @if (statistics.hourly_counts.buckets.length) {
+    <div
+      class="timeline-chart"
+      role="img"
+      aria-label="Gráfico de barras con los recuentos horarios recibidos de la API; las horas se expresan en UTC."
+    >
+      @for (bucket of statistics.hourly_counts.buckets; track bucket.start) {
+        <div class="bar-item" aria-hidden="true">
+          <span class="bar-value">{{ bucket.count }}</span>
+          <div class="bar-track">
+            <span class="bar" [style.height.%]="barHeight(bucket.count)"></span>
+          </div>
+          <span class="bar-label">{{ bucket.start | date: "HH:mm" : "UTC" }}</span>
+        </div>
+      }
+    </div>
+    <details class="data-table">
+      <summary>Consultar los recuentos horarios en una tabla</summary>
+      <div class="table-scroll">
+        <table>
+          <caption>Recuentos horarios proporcionados por la API en UTC</caption>
+          <thead><tr><th scope="col">Hora UTC</th><th scope="col">{{ statistics.hourly_counts.unit }}</th></tr></thead>
+          <tbody>
+            @for (bucket of statistics.hourly_counts.buckets; track bucket.start) {
+              <tr>
+                <td>{{ bucket.start | date: "yyyy-MM-dd HH:mm" : "UTC" }}</td>
+                <td>{{ bucket.count }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </details>
+  } @else {
+    <p class="empty-state">No hay intervalos horarios disponibles para esta respuesta estadística.</p>
+  }
+</section>

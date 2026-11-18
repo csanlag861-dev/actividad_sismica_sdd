@@ -1,0 +1,123 @@
+.panel {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.label,
+.unit {
+  color: var(--color-text-muted);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+h2 {
+  margin: 6px 0 0;
+  font-size: 16px;
+  font-weight: 560;
+}
+
+.context {
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.timeline-chart {
+  display: flex;
+  min-height: 180px;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 20px;
+  overflow-x: auto;
+  padding: 12px 4px 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.bar-item {
+  display: grid;
+  min-width: 38px;
+  flex: 1 0 38px;
+  grid-template-rows: 18px minmax(72px, 1fr) 22px;
+  justify-items: center;
+  color: var(--color-text-secondary);
+  font-size: 9px;
+}
+
+.bar-track {
+  display: flex;
+  width: 18px;
+  height: 100%;
+  align-items: flex-end;
+  border-radius: 4px 4px 0 0;
+  background: var(--color-surface-elevated);
+}
+
+.bar {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  border-radius: 4px 4px 0 0;
+  background: var(--color-primary);
+}
+
+.bar-value {
+  font-family: ui-monospace, monospace;
+}
+
+.bar-label {
+  padding-top: 6px;
+}
+
+.data-table {
+  margin-top: 14px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.data-table summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--color-secondary);
+}
+
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+caption {
+  padding: 8px 0;
+  color: var(--color-text-primary);
+  text-align: left;
+}
+
+th,
+td {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.empty-state {
+  margin: 20px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}

@@ -3,9 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from sqlalchemy import update
 from sqlalchemy.exc import OperationalError
 
 from observatorio.api.routes import get_db_session
+from observatorio.models import EventVersion
 from tests.api_support import seed_api_event
 
 
@@ -37,6 +39,65 @@ async def test_events_contract_filters_and_serializes_unknown_depth(api_context)
     assert body["metadata"]["truncated"] is False
     assert body["features"][0]["geometry"]["coordinates"] == [-3.7, 40.4]
     assert body["features"][0]["properties"]["depth_km"] is None
+
+
+@pytest.mark.asyncio
+async def test_events_contract_exposes_safe_version_traceability(api_context) -> None:
+    client, factory, _ = api_context
+    version_time = datetime(2026, 11, 17, 12, 30, tzinfo=timezone.utc)
+    version = await seed_api_event(
+        factory,
+        event_id="traceable",
+        event_time=version_time,
+        updated_at=version_time,
+    )
+
+    response = await client.get(
+        "/api/eventos",
+        params={
+            "start": "2026-11-17T12:00:00Z",
+            "end": "2026-11-17T13:00:00Z",
+        },
+    )
+
+    assert response.status_code == 200
+    feature = response.json()["features"][0]
+    assert feature["id"] == "traceable"
+    assert feature["properties"]["updated"] == int(version_time.timestamp() * 1000)
+    assert feature["properties"]["traceability"] == {
+        "mode": "live",
+        "source": "usgs-live",
+        "ingested_at": int(version.ingested_at.timestamp() * 1000),
+        "ingestion_run_id": str(version.ingestion_run_id),
+    }
+    assert "original_payload" not in feature
+    assert "original_payload" not in feature["properties"]
+    assert "payload_sha256" not in feature["properties"]
+    assert "payload_sha256" not in feature["properties"]["traceability"]
+
+
+@pytest.mark.asyncio
+async def test_events_contract_hides_unrecognized_traceability_source(api_context) -> None:
+    client, factory, _ = api_context
+    await seed_api_event(factory, event_id="unknown-source")
+    async with factory() as session:
+        await session.execute(
+            update(EventVersion)
+            .where(EventVersion.event_id == "unknown-source")
+            .values(source="unrecognized-source")
+        )
+        await session.commit()
+
+    response = await client.get(
+        "/api/eventos",
+        params={
+            "start": "2026-11-17T00:00:00Z",
+            "end": "2026-11-18T00:00:00Z",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["features"][0]["properties"]["traceability"]["source"] is None
 
 
 @pytest.mark.asyncio

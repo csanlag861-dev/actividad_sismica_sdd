@@ -26,13 +26,21 @@ Devuelve HTTP 200, `Content-Type: application/json` y un GeoJSON `FeatureCollect
       "time": 1793109600000,
       "updated": 1793110000000,
       "country_id": "ESP",
-      "country_name": "España"
+      "country_name": "España",
+      "traceability": {
+        "mode": "live",
+        "source": "usgs-live",
+        "ingested_at": 1793113140000,
+        "ingestion_run_id": "02dfad0c-2c13-431c-95fb-4bdb4d253e23"
+      }
     }
   }]
 }
 ```
 
 `generated`: generación de esta respuesta; no implica que la ingesta siga activa. `last_ingestion`: última consulta correcta a USGS. Fechas en milisegundos Unix UTC. Coordenadas en orden longitud, latitud, profundidad (km). Usa `null`, nunca NaN/Infinity, para magnitud, profundidad o país desconocidos. Geometría válida obligatoria en este endpoint.
+
+`properties.traceability` añade la procedencia compacta de la versión actual. `mode` es `live` o `replay`; `source` solo se publica como `usgs-live` o `usgs-replay`, y cualquier otro valor se representa como `null`; `ingested_at` es la fecha de ingesta de esa versión en milisegundos Unix UTC; `ingestion_run_id` es el UUID de la ejecución. Los valores ausentes se representan como `null`. `Feature.id` sigue siendo el identificador del evento y `properties.updated` su fecha de versión. Las respuestas anteriores pueden carecer del objeto; los clientes deben tolerarlo. No se exponen payloads originales, hashes, credenciales, secretos, parámetros de consulta ni fragmentos de URL. Esta ampliación no modifica los campos existentes ni la semántica de `GET /api/estadisticas`.
 
 Filtros a implementar: `start` (ISO8601, inclusive), `end` (ISO8601, exclusive), `min_mag` y `country_id`. El mapa inicial aún no envía filtros; corresponde al alumnado añadirlos. La magnitud nula no cumple un filtro `min_mag` y debe contabilizarse por separado.
 

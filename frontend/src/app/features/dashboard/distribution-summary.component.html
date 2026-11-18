@@ -1,0 +1,87 @@
+<section class="distribution-grid" aria-label="Distribuciones estadísticas">
+  <article class="distribution panel">
+    <div class="section-heading">
+      <div>
+        <span class="label">DISTRIBUCIÓN</span>
+        <h2>Magnitud</h2>
+      </div>
+      <span class="unit">{{ statistics.distributions.magnitude.unit }}</span>
+    </div>
+    <p class="summary-counts">
+      {{ statistics.distributions.magnitude.valid_count }} válidos ·
+      {{ statistics.distributions.magnitude.missing_count }} ausentes ·
+      ancho de bin {{ statistics.distributions.magnitude.bin_width }}
+    </p>
+    @if (statistics.distributions.magnitude.buckets.length) {
+      <div class="bars" role="img" aria-label="Barras de recuentos por intervalo de magnitud">
+        @for (bucket of statistics.distributions.magnitude.buckets; track bucket.min_inclusive) {
+          <div class="bar-row" aria-hidden="true">
+            <span class="interval">[{{ bucket.min_inclusive }}, {{ bucket.max_exclusive }})</span>
+            <span class="bar-track"><span class="bar" [style.width.%]="barWidth(statistics.distributions.magnitude, bucket.count)"></span></span>
+            <span class="count">{{ bucket.count }}</span>
+          </div>
+        }
+      </div>
+      <div class="table-scroll">
+        <table>
+          <caption>Distribución de magnitud según la respuesta estadística</caption>
+          <thead><tr><th scope="col">Intervalo</th><th scope="col">Recuento</th><th scope="col">Porcentaje</th></tr></thead>
+          <tbody>
+            @for (bucket of statistics.distributions.magnitude.buckets; track bucket.min_inclusive) {
+              <tr>
+                <td>[{{ bucket.min_inclusive }}, {{ bucket.max_exclusive }})</td>
+                <td>{{ bucket.count }}</td>
+                <td>{{ bucket.percentage === null ? "No disponible" : bucket.percentage + "%" }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-state">No hay valores de magnitud válidos para resumir.</p>
+    }
+  </article>
+
+  <article class="distribution panel">
+    <div class="section-heading">
+      <div>
+        <span class="label">DISTRIBUCIÓN</span>
+        <h2>Profundidad</h2>
+      </div>
+      <span class="unit">{{ statistics.distributions.depth_km.unit }}</span>
+    </div>
+    <p class="summary-counts">
+      {{ statistics.distributions.depth_km.valid_count }} válidos ·
+      {{ statistics.distributions.depth_km.missing_count }} ausentes ·
+      ancho de bin {{ statistics.distributions.depth_km.bin_width }}
+    </p>
+    @if (statistics.distributions.depth_km.buckets.length) {
+      <div class="bars" role="img" aria-label="Barras de recuentos por intervalo de profundidad">
+        @for (bucket of statistics.distributions.depth_km.buckets; track bucket.min_inclusive) {
+          <div class="bar-row" aria-hidden="true">
+            <span class="interval">[{{ bucket.min_inclusive }}, {{ bucket.max_exclusive }})</span>
+            <span class="bar-track"><span class="bar" [style.width.%]="barWidth(statistics.distributions.depth_km, bucket.count)"></span></span>
+            <span class="count">{{ bucket.count }}</span>
+          </div>
+        }
+      </div>
+      <div class="table-scroll">
+        <table>
+          <caption>Distribución de profundidad según la respuesta estadística</caption>
+          <thead><tr><th scope="col">Intervalo</th><th scope="col">Recuento</th><th scope="col">Porcentaje</th></tr></thead>
+          <tbody>
+            @for (bucket of statistics.distributions.depth_km.buckets; track bucket.min_inclusive) {
+              <tr>
+                <td>[{{ bucket.min_inclusive }}, {{ bucket.max_exclusive }})</td>
+                <td>{{ bucket.count }}</td>
+                <td>{{ bucket.percentage === null ? "No disponible" : bucket.percentage + "%" }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-state">No hay valores de profundidad válidos para resumir.</p>
+    }
+  </article>
+</section>

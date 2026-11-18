@@ -1,0 +1,51 @@
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Navegación principal">
+    <a class="brand" routerLink="/" aria-label="Observatorio, inicio">
+      <img class="brand-logo" src="/icon.png" alt="Logo del Observatorio de actividad sísmica">
+      <span>
+        <strong>Observatorio</strong>
+        <small>Actividad sísmica</small>
+      </span>
+    </a>
+
+    <nav class="navigation">
+      <span class="nav-caption">Observatorio</span>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <span aria-hidden="true">⌂</span> Resumen
+      </a>
+      <a routerLink="/eventos" routerLinkActive="active">
+        <span aria-hidden="true">◎</span> Exploración
+      </a>
+      <a routerLink="/analisis" routerLinkActive="active">
+        <span aria-hidden="true">▥</span> Análisis
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span>Datos del observatorio</span>
+    </div>
+  </aside>
+
+  <div class="main-column">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">OBSERVATORIO DE ACTIVIDAD SÍSMICA</p>
+        <p class="topbar-context">Monitorización y consulta</p>
+      </div>
+      <button
+        class="theme-toggle"
+        type="button"
+        (click)="toggleTheme()"
+        [attr.aria-label]="theme() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
+      >
+        <span aria-hidden="true">{{ theme() === "dark" ? "☼" : "◐" }}</span>
+        {{ theme() === "dark" ? "Tema claro" : "Tema oscuro" }}
+      </button>
+    </header>
+
+    <main id="main-content" class="page-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

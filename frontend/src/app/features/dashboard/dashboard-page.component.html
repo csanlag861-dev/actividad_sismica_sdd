@@ -1,0 +1,167 @@
+<section class="dashboard">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">PANEL DE CONTROL / RESUMEN</p>
+      <h1>Actividad sísmica</h1>
+      <p class="lede">Consulta el estado y la actividad reportada por el observatorio.</p>
+    </div>
+    <button class="refresh-button" type="button" (click)="queries.refresh()">
+      <span aria-hidden="true">↻</span> Actualizar
+    </button>
+  </div>
+
+  <div class="overview-grid">
+    <article class="panel health-panel">
+      <div class="panel-heading">
+        <div>
+          <span class="label">ESTADO DEL SERVICIO</span>
+          <h2>Salud de la API</h2>
+        </div>
+        <span class="health-icon" aria-hidden="true">⌁</span>
+      </div>
+
+      @if (queries.state().health.status === "loading" && !queries.state().health.data) {
+        <p class="status-line">Consultando estado…</p>
+      } @else if (queries.state().health.error && !queries.state().health.data) {
+        <p class="status-line status-error" role="alert">
+          No se pudo consultar la salud de la API.
+        </p>
+        <p class="supporting">{{ queries.state().health.error?.message }}</p>
+      } @else if (queries.state().health.data?.status === "ok") {
+        <p class="status-line status-ok"><span></span> Servicio disponible</p>
+        <p class="supporting">La API responde a la consulta de salud.</p>
+      } @else if (queries.state().health.data?.status === "unavailable") {
+        <p class="status-line status-error"><span></span> Servicio no disponible</p>
+        <p class="supporting">La API ha informado que una dependencia no está disponible.</p>
+      } @else {
+        <p class="status-line">Estado todavía no disponible.</p>
+      }
+
+      <div class="detail-row">
+        <span>Última ingesta correcta</span>
+        @if (queries.state().health.data?.last_ingestion; as ingestion) {
+          <strong>{{ ingestion | date: "medium" : "UTC" }} UTC</strong>
+        } @else {
+          <strong>No informada</strong>
+        }
+      </div>
+      @if (queries.state().health.possiblyStale) {
+        <p class="stale-note">Se muestra el último estado correcto; la consulta actual ha fallado.</p>
+      }
+    </article>
+
+    <article class="panel events-panel">
+      <div class="panel-heading">
+        <div>
+          <span class="label">EVENTOS DEVUELTOS</span>
+          <h2>Consulta actual</h2>
+        </div>
+        <span class="events-icon" aria-hidden="true">⌖</span>
+      </div>
+      @if (queries.state().events.data; as events) {
+        <p class="metric">{{ events.features.length }}</p>
+        <p class="supporting">
+          {{ events.features.length === 1 ? "evento" : "eventos" }} en la respuesta de la API
+        </p>
+        @if (events.metadata.truncated) {
+          <p class="stale-note">La API indica que los resultados están limitados.</p>
+        }
+      } @else if (queries.state().events.error) {
+        <p class="status-line status-error" role="alert">No se pudieron cargar los eventos.</p>
+        <p class="supporting">{{ queries.state().events.error?.message }}</p>
+      } @else {
+        <p class="status-line">Consultando eventos…</p>
+      }
+      @if (queries.state().events.possiblyStale) {
+        <p class="stale-note">El recuento corresponde a la última lectura correcta.</p>
+      }
+      @if (queries.state().events.readAt; as readAt) {
+        <div class="detail-row">
+          <span>Última lectura de eventos</span>
+          <strong>{{ readAt | date: "mediumTime" }}</strong>
+        </div>
+      }
+    </article>
+  </div>
+
+  <section class="dashboard-section" aria-labelledby="recent-events-title">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">EVENTOS RECIENTES</p>
+        <h2 id="recent-events-title">Actividad en el mapa</h2>
+      </div>
+      @if (eventSnapshot.data; as events) {
+        <span>{{ events.features.length }} recibidos</span>
+      }
+    </div>
+    <app-resource-status
+      [snapshot]="eventSnapshot"
+      label="eventos"
+      [empty]="eventSnapshot.data?.features?.length === 0"
+      [truncated]="eventSnapshot.data?.metadata?.truncated ?? false"
+    />
+    <p class="resource-context">
+      <strong>Periodo de eventos:</strong> {{ eventPeriodLabel }}
+      <span aria-hidden="true"> · </span>
+      <strong>Filtros enviados:</strong> {{ eventFiltersLabel }}
+    </p>
+    @if (eventSnapshot.data) {
+      <div class="map-detail-grid">
+        <div class="map-column">
+          <app-event-map
+            [events]="mapEvents"
+            [selectedId]="selectedId"
+            (eventSelected)="selectEvent($event)"
+          />
+        </div>
+        <app-event-detail [event]="selectedEvent" />
+      </div>
+      <app-events-table
+        [events]="displayedCollection"
+        [selectedId]="selectedId"
+        (eventSelected)="selectEvent($event)"
+      />
+    }
+  </section>
+
+  <section class="dashboard-section" aria-labelledby="statistics-title">
+    <div class="section-title">
+      <div>
+        <p class="eyebrow">RESUMEN ESTADÍSTICO</p>
+        <h2 id="statistics-title">Actividad temporal y distribuciones</h2>
+      </div>
+    </div>
+    <app-resource-status [snapshot]="statisticsSnapshot" label="estadísticas" />
+    @if (statisticsSnapshot.data; as statistics) {
+      <p class="resource-context">
+        <strong>Periodo estadístico:</strong>
+        {{ statistics.period.start | date: "medium" : "UTC" }} –
+        {{ statistics.period.end | date: "medium" : "UTC" }} UTC
+        <span aria-hidden="true"> · </span>
+        <strong>Filtros efectivos:</strong> {{ statisticsFiltersLabel }}
+      </p>
+      <app-activity-timeline [statistics]="statistics" />
+      <app-distribution-summary [statistics]="statistics" />
+    }
+  </section>
+
+  <section class="next-steps" aria-labelledby="next-steps-title">
+    <div>
+      <p class="eyebrow">EXPLORAR LOS DATOS</p>
+      <h2 id="next-steps-title">Continúa tu consulta</h2>
+      <p class="supporting">Consulta los eventos en el mapa y la tabla, y revisa sus estadísticas y comparación histórica.</p>
+    </div>
+    <div class="destination-list">
+      <a class="destination" routerLink="/eventos">
+        <span class="destination-icon" aria-hidden="true">◎</span>
+        <span><strong>Exploración</strong><small>Mapa, filtros y fichas de eventos</small></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="destination" routerLink="/analisis">
+        <span class="destination-icon" aria-hidden="true">▥</span>
+        <span><strong>Análisis</strong><small>Estadísticas y comparación histórica</small></span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+</section>

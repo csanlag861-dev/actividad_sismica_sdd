@@ -1,0 +1,104 @@
+.table-panel {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.table-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px;
+}
+
+.label {
+  color: var(--color-text-muted);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.table-heading h2 {
+  margin: 6px 0 0;
+  font-size: 15px;
+}
+
+.table-count {
+  color: var(--color-text-secondary);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.truncated-note {
+  margin: 0 18px 12px;
+  color: var(--color-warning);
+  font-size: 11px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: nowrap;
+}
+
+caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+th,
+td {
+  padding: 11px 14px;
+  border-top: 1px solid var(--color-border);
+  font-size: 11px;
+}
+
+th {
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+td {
+  color: var(--color-text-secondary);
+}
+
+tbody tr.selected {
+  background: var(--color-surface-elevated);
+}
+
+td button {
+  display: grid;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+td button small,
+td small {
+  color: var(--color-text-muted);
+  font-size: 9px;
+}
+
+.empty-message {
+  margin: 0;
+  padding: 22px 18px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}

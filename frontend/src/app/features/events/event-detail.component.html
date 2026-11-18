@@ -1,0 +1,36 @@
+<aside class="detail-card" aria-live="polite">
+  <span class="label">FICHA DEL EVENTO</span>
+  @if (event) {
+    <h2>{{ event.properties.place ?? "Ubicación desconocida" }}</h2>
+    <dl>
+      <div><dt>Magnitud</dt><dd>{{ event.properties.mag ?? "Desconocida" }} @if (event.properties.magType) { <small>({{ event.properties.magType }})</small> }</dd></div>
+      <div><dt>Profundidad</dt><dd>{{ event.properties.depth_km === null ? "Desconocida" : event.properties.depth_km + " km" }}</dd></div>
+      <div><dt>Fecha y hora</dt><dd>{{ event.properties.time | date: "medium" : "UTC" }} UTC</dd></div>
+      <div><dt>Coordenadas</dt><dd>{{ coordinateText }}</dd></div>
+      <div><dt>País</dt><dd>{{ event.properties.country_name ?? "Desconocido" }}</dd></div>
+      <div><dt>Identificador de país</dt><dd>{{ event.properties.country_id ?? "Desconocido" }}</dd></div>
+      <div><dt>Identificador de origen</dt><dd class="event-id">{{ event.id }}</dd></div>
+    </dl>
+    <section class="traceability" aria-labelledby="traceability-title">
+      <h3 id="traceability-title">Trazabilidad</h3>
+      <dl>
+        <div><dt>Modo de procedencia</dt><dd>{{ modeLabel }}</dd></div>
+        <div><dt>Fuente</dt><dd>{{ event.properties.traceability?.source ?? "No disponible" }}</dd></div>
+        <div><dt>Versión</dt><dd>{{ event.properties.updated | date: "medium" : "UTC" }} UTC</dd></div>
+        <div>
+          <dt>Fecha de ingesta</dt>
+          <dd>
+            @if (event.properties.traceability?.ingested_at !== null && event.properties.traceability?.ingested_at !== undefined) {
+              {{ event.properties.traceability?.ingested_at | date: "medium" : "UTC" }} UTC
+            } @else {
+              No disponible
+            }
+          </dd>
+        </div>
+        <div><dt>Ejecución de ingesta</dt><dd class="event-id">{{ event.properties.traceability?.ingestion_run_id ?? "No disponible" }}</dd></div>
+      </dl>
+    </section>
+  } @else {
+    <p class="empty-selection">Selecciona un punto del mapa o una fila de la tabla para consultar sus atributos.</p>
+  }
+</aside>

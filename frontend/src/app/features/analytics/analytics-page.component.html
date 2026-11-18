@@ -1,0 +1,32 @@
+<section class="analytics-page">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">ANÁLISIS / ESTADÍSTICAS</p>
+      <h1>Análisis de actividad</h1>
+      <p class="lede">Visualizaciones y comparación construidas con los agregados declarados por la API.</p>
+    </div>
+    <button class="refresh-button" type="button" (click)="queries.refresh()">Reintentar / actualizar</button>
+  </div>
+
+  <app-event-filters />
+
+  <app-resource-status [snapshot]="queries.state().statistics" label="estadísticas" />
+
+  @if (queries.state().statistics.data; as statistics) {
+    @if (queries.state().statistics.possiblyStale) {
+      <p class="stale-note">
+        Las estadísticas corresponden a la última lectura correcta
+        @if (queries.state().statistics.readAt; as readAt) {
+          ({{ readAt | date: "medium" : "UTC" }} UTC)
+        }.
+      </p>
+    }
+    <app-statistics-view [statistics]="statistics" />
+    <app-historical-comparison [statistics]="statistics" />
+  } @else if (queries.state().statistics.status === "error") {
+    <section class="unavailable-panel">
+      <h2>Visualizaciones no disponibles</h2>
+      <p>No se reemplazan los agregados con ceros ni con valores calculados en el navegador.</p>
+    </section>
+  }
+</section>

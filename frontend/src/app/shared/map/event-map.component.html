@@ -1,0 +1,14 @@
+<section class="map-frame" aria-label="Mapa de eventos sísmicos">
+  <div #mapContainer class="map-canvas" role="application" aria-label="Mapa interactivo de eventos"></div>
+  <div class="map-legend" aria-label="Leyenda de magnitud y profundidad">
+    <strong>Tamaño del marcador</strong>
+    <span class="size-note">Radio de 4 + 2 × max(0, magnitud) px, limitado a 4–18 px; magnitud nula: 5 px y contorno discontinuo.</span>
+    <strong>Profundidad</strong>
+    @for (entry of depthLegend(maxDepth, hasNegativeDepth); track entry.label) {
+      <span><i [style.backgroundColor]="entry.color" aria-hidden="true"></i>{{ entry.label }}</span>
+    }
+  </div>
+  @if (mapError) {
+    <p class="map-error" role="alert">{{ mapError }}</p>
+  }
+</section>

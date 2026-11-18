@@ -25,6 +25,7 @@ from observatorio.models import Country
 
 logger = get_logger("observatorio.api.routes")
 router = APIRouter(prefix="/api")
+_SAFE_EVENT_SOURCES = frozenset({"usgs-live", "usgs-replay"})
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
@@ -96,6 +97,12 @@ async def get_events(
                     "updated": epoch_milliseconds(row.updated_at),
                     "country_id": row.country_id,
                     "country_name": row.country_name,
+                    "traceability": {
+                        "mode": row.mode,
+                        "source": row.source if row.source in _SAFE_EVENT_SOURCES else None,
+                        "ingested_at": epoch_milliseconds(row.ingested_at),
+                        "ingestion_run_id": str(row.ingestion_run_id),
+                    },
                 },
             }
         )

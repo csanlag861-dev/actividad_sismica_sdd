@@ -1,0 +1,90 @@
+<section class="statistics-section" aria-labelledby="statistics-title">
+  <div class="section-heading">
+    <div>
+      <span class="label">ESTADÍSTICAS DE LA API</span>
+      <h2 id="statistics-title">Distribución de eventos</h2>
+    </div>
+    <span class="period-chip">{{ statistics.period.start }} → {{ statistics.period.end }}</span>
+  </div>
+  <p class="filter-context"><strong>Filtros efectivos para todos los gráficos:</strong> {{ effectiveFiltersLabel }}</p>
+
+  <div class="chart-grid">
+    <article class="chart-card">
+      <h3>Recuento por hora UTC</h3>
+      <p class="chart-meta">{{ statistics.hourly_counts.unit }} · {{ statistics.hourly_counts.missing_count }} sin hora</p>
+      <div #chart class="chart" role="img" aria-label="Gráfico de eventos por hora UTC"></div>
+      @if (!statistics.hourly_counts.buckets.length) {
+        <p class="empty-chart">No hay intervalos horarios en esta respuesta.</p>
+      }
+    </article>
+    <article class="chart-card">
+      <h3>Recuento por país</h3>
+      <p class="chart-meta">{{ statistics.country_counts.unit }} · {{ statistics.country_counts.missing_count }} sin país</p>
+      <div #chart class="chart" role="img" aria-label="Gráfico de eventos por país"></div>
+      @if (!statistics.country_counts.buckets.length) {
+        <p class="empty-chart">No hay categorías de país en esta respuesta.</p>
+      }
+      @if (hasUnassignedCountry) {
+        <p class="missing-note">Incluye la categoría «Sin país asignado».</p>
+      }
+    </article>
+    <article class="chart-card">
+      <h3>Distribución de magnitud</h3>
+      <p class="chart-meta">{{ statistics.distributions.magnitude.unit }} · bin {{ statistics.distributions.magnitude.bin_width }} · {{ statistics.distributions.magnitude.valid_count }} válidos · {{ statistics.distributions.magnitude.missing_count }} ausentes</p>
+      <div #chart class="chart" role="img" aria-label="Distribución de magnitudes por intervalos de la API"></div>
+      @if (!statistics.distributions.magnitude.buckets.length) {
+        <p class="empty-chart">No hay magnitudes válidas para distribuir.</p>
+      }
+    </article>
+    <article class="chart-card">
+      <h3>Distribución de profundidad</h3>
+      <p class="chart-meta">{{ statistics.distributions.depth_km.unit }} · bin {{ statistics.distributions.depth_km.bin_width }} · {{ statistics.distributions.depth_km.valid_count }} válidos · {{ statistics.distributions.depth_km.missing_count }} ausentes</p>
+      <div #chart class="chart" role="img" aria-label="Distribución de profundidad por intervalos de la API"></div>
+      @if (!statistics.distributions.depth_km.buckets.length) {
+        <p class="empty-chart">No hay profundidades válidas para distribuir.</p>
+      }
+    </article>
+  </div>
+
+  <details class="data-table">
+    <summary>Consultar valores de los gráficos en tablas</summary>
+    <div class="table-wrap">
+      <table>
+        <caption>Recuentos horarios proporcionados por la API</caption>
+        <thead><tr><th scope="col">Hora UTC</th><th scope="col">{{ statistics.hourly_counts.unit }}</th></tr></thead>
+        <tbody>
+          @for (bucket of statistics.hourly_counts.buckets; track bucket.start) {
+            <tr><td>{{ bucket.start }}</td><td>{{ bucket.count }}</td></tr>
+          }
+        </tbody>
+      </table>
+      <table>
+        <caption>Recuentos por país proporcionados por la API</caption>
+        <thead><tr><th scope="col">País</th><th scope="col">{{ statistics.country_counts.unit }}</th></tr></thead>
+        <tbody>
+          @for (bucket of statistics.country_counts.buckets; track bucket.country_id ?? bucket.country_name) {
+            <tr><td>{{ bucket.country_name }}</td><td>{{ bucket.count }}</td></tr>
+          }
+        </tbody>
+      </table>
+      <table>
+        <caption>Distribución de magnitud proporcionada por la API</caption>
+        <thead><tr><th scope="col">Intervalo</th><th scope="col">Eventos</th><th scope="col">Porcentaje</th></tr></thead>
+        <tbody>
+          @for (bucket of statistics.distributions.magnitude.buckets; track bucket.min_inclusive) {
+            <tr><td>[{{ bucket.min_inclusive }}, {{ bucket.max_exclusive }})</td><td>{{ bucket.count }}</td><td>{{ bucket.percentage === null ? "No disponible" : bucket.percentage + "%" }}</td></tr>
+          }
+        </tbody>
+      </table>
+      <table>
+        <caption>Distribución de profundidad proporcionada por la API</caption>
+        <thead><tr><th scope="col">Intervalo km</th><th scope="col">Eventos</th><th scope="col">Porcentaje</th></tr></thead>
+        <tbody>
+          @for (bucket of statistics.distributions.depth_km.buckets; track bucket.min_inclusive) {
+            <tr><td>[{{ bucket.min_inclusive }}, {{ bucket.max_exclusive }})</td><td>{{ bucket.count }}</td><td>{{ bucket.percentage === null ? "No disponible" : bucket.percentage + "%" }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</section>

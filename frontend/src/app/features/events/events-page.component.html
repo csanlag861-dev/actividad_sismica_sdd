@@ -1,0 +1,56 @@
+<section class="events-page">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">EXPLORADOR / EVENTOS</p>
+      <h1>Exploración sísmica</h1>
+      <p class="lede">Consulta la distribución geográfica y los atributos de los eventos devueltos por la API.</p>
+    </div>
+    <button type="button" class="refresh-button" (click)="queries.refresh()">Reintentar / actualizar</button>
+  </div>
+
+  <app-event-filters />
+
+  <app-resource-status
+    [snapshot]="queries.state().events"
+    label="eventos"
+    [empty]="queries.state().events.data?.features?.length === 0"
+    [truncated]="queries.state().events.data?.metadata?.truncated ?? false"
+  />
+
+  @if (eventSnapshot.data) {
+    <section class="query-context" aria-label="Contexto de los eventos mostrados">
+      <h2>Contexto de la última lectura de eventos</h2>
+      <p><strong>Periodo:</strong> {{ displayedPeriod }}</p>
+      <p><strong>Filtros enviados:</strong> {{ displayedFilters }}</p>
+      @if (eventSnapshot.readAt; as readAt) {
+        <p><strong>Lectura:</strong> {{ readAt | date: "medium" : "UTC" }} UTC</p>
+      }
+    </section>
+  }
+
+  <div class="map-detail-grid">
+    <div class="map-column">
+      <div class="section-title">
+        <h2>Mapa de eventos</h2>
+        @if (queries.state().events.data; as events) {
+          <span>{{ events.features.length }} recibidos</span>
+        }
+      </div>
+      <app-event-map
+        [events]="queries.state().events.data"
+        [selectedId]="selectedId()"
+        (eventSelected)="selectEvent($event)"
+      />
+      @if (queries.state().events.data?.metadata?.truncated) {
+        <p class="truncated-note">La colección está truncada; el mapa representa solo los eventos recibidos.</p>
+      }
+    </div>
+    <app-event-detail [event]="selectedEvent" />
+  </div>
+
+  <app-events-table
+    [events]="queries.state().events.data"
+    [selectedId]="selectedId()"
+    (eventSelected)="selectEvent($event)"
+  />
+</section>

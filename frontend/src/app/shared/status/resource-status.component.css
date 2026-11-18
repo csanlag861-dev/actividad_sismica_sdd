@@ -1,0 +1,16 @@
+.resource-status {
+  display: grid;
+  gap: 5px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.error {
+  color: var(--color-danger);
+}
+
+.stale,
+.limited {
+  color: var(--color-warning);
+}

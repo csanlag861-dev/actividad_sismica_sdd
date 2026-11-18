@@ -1,0 +1,47 @@
+<form class="filters-panel" (ngSubmit)="apply()" novalidate>
+  <div class="filters-heading">
+    <div>
+      <span class="label">CRITERIOS DE CONSULTA</span>
+      <h2>Filtros</h2>
+    </div>
+    <span class="api-note">Parámetros de la API</span>
+  </div>
+
+  <div class="filter-grid">
+    <label>
+      <span>Desde <small>UTC, inclusive</small></span>
+      <input type="datetime-local" name="start" [(ngModel)]="startValue">
+    </label>
+    <label>
+      <span>Hasta <small>UTC, exclusive</small></span>
+      <input type="datetime-local" name="end" [(ngModel)]="endValue">
+    </label>
+    <label>
+      <span>Magnitud mínima</span>
+      <input type="number" step="any" name="minMagnitude" [(ngModel)]="minMagnitude">
+    </label>
+    <label>
+      <span>País</span>
+      <select name="country" [(ngModel)]="countryId">
+        <option value="">Todos los países</option>
+        @for (country of catalog.countries(); track country.id) {
+          <option [value]="country.id">{{ country.name }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div class="filter-actions">
+    <p>Sin periodo personalizado, la API consulta las últimas 24 horas.</p>
+    <div>
+      <button class="clear-button" type="button" (click)="clear()">Limpiar</button>
+      <button class="apply-button" type="submit">Aplicar filtros</button>
+    </div>
+  </div>
+  @if (filterError) {
+    <p class="filter-error" role="alert">{{ filterError }}</p>
+  }
+  @if (catalogError) {
+    <p class="filter-error" role="status">{{ catalogError }} El filtro por país no está disponible.</p>
+  }
+</form>

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,9 @@ class EventRow:
     mode: str
     event_id: str
     updated_at: datetime
+    source: str
+    ingested_at: datetime
+    ingestion_run_id: UUID
     event_time: datetime
     magnitude: float | None
     mag_type: str | None
@@ -58,6 +62,9 @@ async def _rows(session: AsyncSession, statement) -> list[EventRow]:
             mode=version.mode,
             event_id=version.event_id,
             updated_at=version.updated_at,
+            source=version.source,
+            ingested_at=version.ingested_at,
+            ingestion_run_id=version.ingestion_run_id,
             event_time=version.event_time,
             magnitude=float(version.magnitude) if version.magnitude is not None else None,
             mag_type=version.mag_type,

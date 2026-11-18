@@ -1,3 +1,3 @@
 {
-  "apiBaseUrl": "https://your-api-domain.example"
+  "apiBaseUrl": "http://localhost:8000"
 }

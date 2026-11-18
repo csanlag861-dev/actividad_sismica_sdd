@@ -46,7 +46,7 @@ una tarea dependa del resultado de otra.
 | H3. Preparar infraestructura | Cinco servicios levantan y se comunican | H2 |
 | H4. Recorrido mínimo | Un evento de prueba llega a la interfaz | H3 |
 | H5. Completar pipeline | Ingesta, revisiones, histórico y enriquecimiento operativos | H4 |
-| H6. Completar consulta y panel | Contrato, filtros y análisis visibles | H5 |
+| H6. Completar el panel web | Navegación, dashboard y análisis de eventos integrados con la API | H5 |
 | H7. Aceptación y mediciones | Casos funcionales, fallos, replay y costes verificados | H6 |
 | H8. Desplegar y documentar | Panel publicado, documentación y evidencias listas | H7 |
 | H9. Defender y entregar | Demostración repetible y entrega revisada | H8 |
@@ -540,14 +540,22 @@ filtros y estadísticas coherentes.
 - **Tipo**: Obligatorio.
 - **Depende de**: R18, R20.
 - **Actividades**:
-  1. Cambiar modo demo a API siguiendo el formato de `public/config.json`.
-  2. Representar una única capa actualizada por respuesta.
-  3. Mostrar ficha con datos del evento y tratar nulos visiblemente.
-  4. Mantener longitud/latitud correctas al dibujar puntos y fronteras.
-  5. Mantener atribución cartográfica del material base.
-- **Resultado**: mapa conectado a datos reales del servicio del proyecto.
-- **Criterio de fin**: puntos aparecen donde corresponde, no se acumulan al
-  refrescar y una respuesta errónea no se presenta como información nueva.
+  1. Crear la estructura de navegación y el dashboard principal del observatorio.
+  2. Ofrecer los temas oscuro y claro de acuerdo con el sistema visual del
+     proyecto.
+  3. Conectar la interfaz al servicio del proyecto usando el formato de
+     `public/config.json`; no consultar USGS ni mezclar datos sintéticos.
+  4. Integrar el mapa 2D existente y representar una única capa actualizada
+     por respuesta.
+  5. Mostrar la ficha del evento seleccionado y tratar valores nulos
+     visiblemente.
+  6. Mantener el orden longitud/latitud al dibujar puntos y fronteras y
+     conservar la atribución cartográfica del material base.
+- **Resultado**: dashboard y navegación iniciales con mapa conectado a datos
+  del servicio del proyecto.
+- **Criterio de fin**: navegación y temas son utilizables, los puntos aparecen
+  donde corresponde, no se acumulan al refrescar y una respuesta errónea no se
+  presenta como información nueva.
 - **Evidencia**: captura con datos del backend, filtros activos y estado de
   actualización.
 - **Referencia**: enunciado, sección 8; README, secciones 2–3.
@@ -557,15 +565,18 @@ filtros y estadísticas coherentes.
 - **Tipo**: Obligatorio.
 - **Depende de**: R19, R21.
 - **Actividades**:
-  1. Añadir filtros de fecha, magnitud y país/región aplicados coherentemente
-     al mapa y estadísticas.
+  1. Añadir filtros de periodo, magnitud mínima y país, aplicados
+     coherentemente al mapa y estadísticas.
   2. Añadir tabla consultable como alternativa al mapa/color.
   3. Añadir tamaño por magnitud, color por profundidad, leyenda y tratamiento
      visible de nulos.
-  4. Mostrar recuentos por hora UTC y país/subregión, incluidos eventos sin
-     país.
+  4. Mostrar recuentos por hora UTC y país, incluidos eventos sin país.
   5. Mostrar distribuciones de magnitud/profundidad con registros sin valor.
   6. Añadir aviso y comportamiento visible ante API caída o datos desactualizados.
+- **Límite contractual**: la API definida actualmente admite `start`, `end`,
+  `min_mag` y `country_id`, y solo proporciona recuentos agrupados por país.
+  Esta entrega no simula filtros o agregaciones regionales/subregionales ni
+  filtros de tipo; requieren una ampliación contractual separada.
 - **Resultado**: panel de exploración y consulta con vistas complementarias.
 - **Criterio de fin**: mapa, tabla y gráficas muestran el mismo conjunto bajo
   filtros equivalentes y exponen ausentes/truncamiento.
@@ -577,7 +588,8 @@ filtros y estadísticas coherentes.
 - **Tipo**: Obligatorio.
 - **Depende de**: R17, R19, R22.
 - **Actividades**:
-  1. Comparar periodo reciente e histórico con mismo tipo, ámbito y filtros.
+  1. Comparar el periodo consultado con el baseline de 2025 usando el mismo
+     ámbito y los filtros admitidos por la API.
   2. Incluir días con cero eventos en el denominador histórico donde aplique.
   3. Explicar retrasos y que el periodo reciente puede estar incompleto.
   4. Manejar media histórica cero sin división inválida y mostrar ND cuando
@@ -585,6 +597,11 @@ filtros y estadísticas coherentes.
   5. Redactar al menos tres conclusiones con cifras, filtros, periodo y
      denominador.
   6. No presentar recuentos como predicción o evaluación de riesgo.
+- **Límite contractual**: la respuesta estadística compara el periodo consultado
+  con el baseline disponible de 2025 usando los filtros admitidos por la API.
+  No ofrecer selección de otros años ni filtros de tipo de magnitud que el
+  contrato actual no proporcione; la ampliación de esos filtros queda pendiente
+  de una actualización contractual.
 - **Resultado**: análisis histórico comparable y conclusiones defendibles.
 - **Criterio de fin**: filtros y periodos quedan visibles; otro lector puede
   repetir la comparación y las tres conclusiones están respaldadas por datos.
@@ -592,11 +609,14 @@ filtros y estadísticas coherentes.
   conclusiones.
 - **Referencia**: enunciado, sección 8; FAQ, preguntas 22–24.
 
-### Hito H6 — Servicio y panel listos
+### Hito H6 — Panel web listo
 
-Continúa cuando las tres operaciones de consulta, filtros, errores, estados,
-tabla, mapa, distribuciones y comparación histórica se verifican con una
-muestra conocida y con datos persistidos reales.
+El servicio y el transporte de consulta quedan definidos en R18–R20. H6 se
+completa cuando la navegación y el dashboard consumen esa API y R21–R23
+verifican mapa/ficha, filtros, tabla, visualizaciones y comparación histórica
+con una muestra conocida y con datos persistidos reales. El panel distingue
+errores, resultados vacíos, valores ausentes, posible desactualización y
+resultados limitados sin sustituirlos por datos ficticios.
 
 ## Fase 6 — Probar aceptación, replay, rendimiento y costes
 

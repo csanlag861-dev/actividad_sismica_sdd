@@ -1,0 +1,55 @@
+<section class="comparison-card" aria-labelledby="comparison-title">
+  <div class="comparison-heading">
+    <div>
+      <span class="label">REFERENCIA HISTÓRICA</span>
+      <h2 id="comparison-title">Comparación con el baseline</h2>
+    </div>
+    <span class="baseline-status" [class.available]="statistics.historical_comparison.baseline_available">
+      {{ statistics.historical_comparison.baseline_available ? "Cobertura disponible" : "Cobertura no disponible" }}
+    </span>
+  </div>
+
+  <div class="comparison-context">
+    <p><span>Periodo actual</span><strong>{{ statistics.period.start }} → {{ statistics.period.end }}</strong></p>
+    <p><span>Baseline informado por la API ({{ statistics.historical_comparison.baseline_days }} días)</span><strong>{{ statistics.historical_comparison.baseline_period.start }} → {{ statistics.historical_comparison.baseline_period.end }}</strong></p>
+    <p><span>Filtros aplicados</span><strong>
+      @if (statistics.filters.min_mag !== null) { Magnitud ≥ {{ statistics.filters.min_mag }} } @else { Sin magnitud mínima }
+      ·
+      @if (statistics.filters.country_id !== null) { País {{ statistics.filters.country_id }} } @else { Todos los países }
+    </strong></p>
+    <p><span>Unidad</span><strong>{{ statistics.historical_comparison.unit }}</strong></p>
+  </div>
+
+  @if (!statistics.historical_comparison.baseline_available) {
+    <p class="baseline-message" role="status">
+      La API indica que no hay cobertura histórica completa para esta comparación. No se calcula ni se representa un promedio histórico.
+    </p>
+  } @else {
+    <div class="rate-grid">
+      <div><span>Eventos en el periodo actual</span><strong>{{ statistics.historical_comparison.current_count }}</strong></div>
+      <div><span>Duración actual</span><strong>{{ formatNumber(statistics.historical_comparison.current_period_days) }} días</strong></div>
+      <div><span>Tasa actual</span><strong>{{ formatNumber(statistics.historical_comparison.current_daily_average) }} {{ statistics.historical_comparison.unit }}</strong></div>
+      <div><span>Tasa histórica</span><strong>
+        @if (statistics.historical_comparison.historical_daily_average === null) {
+          No disponible
+        } @else {
+          {{ formatNumber(statistics.historical_comparison.historical_daily_average) }} {{ statistics.historical_comparison.unit }}
+        }
+      </strong></div>
+    </div>
+    @if (statistics.historical_comparison.historical_daily_average === 0) {
+      <p class="baseline-message" role="status">La tasa histórica es cero. La respuesta no incluye diferencia ni cociente para este caso.</p>
+    } @else {
+      <div class="rate-grid deltas">
+        @if (statistics.historical_comparison.daily_rate_difference !== undefined) {
+          <div><span>Diferencia de tasa (API)</span><strong>{{ formatNumber(statistics.historical_comparison.daily_rate_difference) }} {{ statistics.historical_comparison.unit }}</strong></div>
+        }
+        @if (statistics.historical_comparison.daily_rate_ratio !== undefined) {
+          <div><span>Cociente de tasas (API)</span><strong>{{ formatNumber(statistics.historical_comparison.daily_rate_ratio) }}×</strong></div>
+        }
+      </div>
+    }
+  }
+
+  <p class="limitation">La comparación describe tasas del periodo y el baseline reportados por la API; no es una predicción ni una evaluación de riesgo sísmico.</p>
+</section>

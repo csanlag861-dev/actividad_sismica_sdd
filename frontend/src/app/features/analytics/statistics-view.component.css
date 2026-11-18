@@ -1,0 +1,141 @@
+.statistics-section {
+  display: grid;
+  gap: 14px;
+}
+
+.section-heading,
+.section-heading > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-heading > div {
+  display: block;
+}
+
+.label {
+  color: var(--color-text-muted);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.section-heading h2 {
+  margin: 6px 0 0;
+  font-size: 17px;
+}
+
+.period-chip,
+.chart-meta {
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.filter-context {
+  margin: -7px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.filter-context strong {
+  color: var(--color-text-primary);
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.chart-card {
+  min-width: 0;
+  min-height: 280px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-surface);
+}
+
+.chart-card h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.chart-meta {
+  min-height: 28px;
+  margin: 6px 0 0;
+  line-height: 1.4;
+}
+
+.chart {
+  width: 100%;
+  height: 190px;
+}
+
+.empty-chart,
+.missing-note {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.missing-note {
+  margin: 0;
+}
+
+.data-table {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 11px;
+}
+
+.data-table summary {
+  cursor: pointer;
+}
+
+.table-wrap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+  overflow: auto;
+}
+
+.table-wrap table {
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table-wrap caption {
+  padding: 7px 0;
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.table-wrap th,
+.table-wrap td {
+  padding: 6px;
+  border-top: 1px solid var(--color-border);
+}
+
+.table-wrap th {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+@media (max-width: 700px) {
+  .chart-grid,
+  .table-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,51 @@
+<section class="table-panel" aria-labelledby="events-table-title">
+  <div class="table-heading">
+    <div>
+      <span class="label">ALTERNATIVA AL MAPA</span>
+      <h2 id="events-table-title">Eventos consultados</h2>
+    </div>
+    @if (events; as collection) {
+      <span class="table-count">{{ collection.features.length }} filas</span>
+    }
+  </div>
+
+  @if (events?.metadata?.truncated) {
+    <p class="truncated-note" role="status">La respuesta está truncada; esta tabla muestra solo los eventos recibidos y no representa un total global.</p>
+  }
+  @if (events?.features?.length) {
+    <div class="table-scroll">
+      <table>
+        <caption>Eventos sísmicos devueltos por la API para la consulta actual</caption>
+        <thead>
+          <tr>
+            <th scope="col">Lugar</th>
+            <th scope="col">Fecha y hora (UTC)</th>
+            <th scope="col">Magnitud</th>
+            <th scope="col">Profundidad</th>
+            <th scope="col">País</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (event of events?.features ?? []; track event.id) {
+            <tr [class.selected]="event.id === selectedId">
+              <td>
+                <button type="button" (click)="eventSelected.emit(event.id)">
+                  {{ event.properties.place ?? "Ubicación desconocida" }}
+                  <small>{{ event.id }}</small>
+                </button>
+              </td>
+              <td>{{ event.properties.time | date: "medium" : "UTC" }} UTC</td>
+              <td>{{ event.properties.mag ?? "Desconocida" }} @if (event.properties.magType) { <small>{{ event.properties.magType }}</small> }</td>
+              <td>{{ event.properties.depth_km === null ? "Desconocida" : event.properties.depth_km + " km" }}</td>
+              <td>{{ event.properties.country_name ?? "Desconocido" }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (events) {
+    <p class="empty-message">La consulta se completó correctamente y no devolvió eventos para estos criterios.</p>
+  } @else {
+    <p class="empty-message">No hay una colección de eventos disponible.</p>
+  }
+</section>
