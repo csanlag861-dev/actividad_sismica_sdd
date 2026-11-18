@@ -42,6 +42,39 @@ async def test_events_contract_filters_and_serializes_unknown_depth(api_context)
 
 
 @pytest.mark.asyncio
+async def test_events_contract_selects_replay_without_mixing_live(api_context) -> None:
+    client, factory, _ = api_context
+    replay_time = datetime(2025, 6, 1, 12, tzinfo=timezone.utc)
+    await seed_api_event(
+        factory,
+        event_id="live-only",
+        event_time=replay_time,
+        mode="live",
+    )
+    await seed_api_event(
+        factory,
+        event_id="replay-only",
+        event_time=replay_time,
+        mode="replay",
+    )
+
+    response = await client.get(
+        "/api/eventos",
+        params={
+            "mode": "replay",
+            "start": "2025-06-01T00:00:00Z",
+            "end": "2025-06-02T00:00:00Z",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["metadata"]["mode"] == "replay"
+    assert [feature["id"] for feature in body["features"]] == ["replay-only"]
+    assert body["features"][0]["properties"]["traceability"]["mode"] == "replay"
+
+
+@pytest.mark.asyncio
 async def test_events_contract_exposes_safe_version_traceability(api_context) -> None:
     client, factory, _ = api_context
     version_time = datetime(2026, 11, 17, 12, 30, tzinfo=timezone.utc)

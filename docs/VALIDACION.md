@@ -1,4 +1,9 @@
-# Validación del material base
+# Validación del material de partida
+
+Esta primera sección registra las comprobaciones del mapa/material base, no el
+estado final del proyecto. La implementación posterior del backend, las
+pruebas y su evaluación se documentan al final y en
+[`memoria-evaluacion.md`](memoria-evaluacion.md).
 
 Comprobaciones realizadas el 27 de octubre de 2026:
 
@@ -31,3 +36,39 @@ Las pruebas unitarias y de contrato backend, junto con los tests del cliente API
 El runner `npm test` compila el bundle de pruebas, pero este entorno no tiene Chrome/Chromium para ejecutar ChromeHeadless. Un smoke-test con navegador integrado confirmó la ruta directa `/globo-3d`, el canvas de Cesium y el canvas MapLibre con su atribución OpenStreetMap. Las consultas de eventos desde el puerto temporal 4300 fueron bloqueadas por CORS; no había datos para validar marcadores/selección y no se completó la interacción con deck.gl ni el fallback WebGL.
 
 Los umbrales de rendimiento SC-002 y la evaluación humana de diez participantes SC-003/SC-006 no se midieron en este entorno. Deben ejecutarse con la fixture, el método y el registro definidos en `specs/007-exploracion-sismica-avanzada/quickstart.md`; no se sustituyen por resultados estimados.
+
+## Validación del proyecto implementado
+
+Comprobaciones ejecutadas el 18 de noviembre de 2026:
+
+- Backend: 124 pruebas unitarias/de contrato y 18 pruebas de integración
+  (17 generales y una con PostgreSQL aislado) superadas.
+- Frontend: 13 pruebas del cliente de API superadas y build Angular de
+  producción superado.
+- La suite Karma no se pudo ejecutar: este entorno no tiene un binario
+  Chrome/Chromium para `ChromeHeadless`.
+- Los cinco servicios de Docker Compose quedaron activos y saludables tras
+  aplicar la migración `0007_event_time_query_index` y reiniciar Kafka con
+  `KAFKA_LOG_RETENTION_HOURS=168`; se verificó que el índice existe en
+  PostgreSQL.
+- Se probó `GET /api/eventos?mode=replay` con periodo histórico, validación de
+  parámetros y aislamiento live/replay. La nueva ruta `/reproduccion` se
+  comprobó en navegador local con un día de 2025 y sus datos reales.
+- El feed de las últimas 24 horas pudo consultarse en USGS directamente.
+  La carga del histórico de 2025 se ejecutó por intervalos mediante el
+  productor y Kafka. El perfil SQL anual cubrió 18.302 eventos; se conciliaron
+  los 60 ACK previos con la ejecución completa y se documentaron el método y
+  las limitaciones en la memoria.
+- Un smoke test en `http://localhost:4200/reproduccion` confirmó la consulta
+  de 60 eventos para el 1 de enero de 2025. No equivale a una evaluación de
+  usabilidad ni a una prueba de despliegue.
+- No se ha configurado ni desplegado una cuenta real de Netlify/ngrok.
+- El guion de la evaluación humana SC-003/SC-006 está preparado en
+  [`evaluacion-usabilidad-007.md`](evaluacion-usabilidad-007.md), pero no se
+  ejecutó: faltan diez participantes reales y una fixture de prueba aislada.
+  No se han medido esos criterios ni los umbrales de rendimiento SC-002.
+
+Las mediciones de búsqueda incluidas en la memoria son microbenchmarks locales
+con identificadores sintéticos, no estadísticas sísmicas. Los resultados del
+feed y del histórico sísmico se identifican como datos reales USGS y llevan su
+periodo y procedencia.

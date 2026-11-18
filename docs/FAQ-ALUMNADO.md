@@ -495,6 +495,8 @@ Usa un topic y tablas/esquema separados de los datos live, o un aislamiento equi
 
 **Importante:** si reproduces 2025 y la API filtra por defecto las últimas 24 horas de 2026, no verás los puntos. La vista de reproducción debe consultar el intervalo histórico correspondiente y los datos aislados de replay. No cambies las fechas originales solo para que aparezcan.
 
+En esta aplicación, la ruta `/reproduccion` consulta explícitamente `mode=replay`, permite seleccionar el intervalo histórico y muestra una etiqueta «REPRODUCCIÓN». La tabla pagina el conjunto completo; el mapa advierte si representa solo los primeros 100 resultados.
+
 Añade duplicados y revisiones controladas para demostrar el comportamiento de la pregunta 12. El archivo demo del frontend es estático y no sustituye esta prueba del pipeline.
 
 ### 33. ¿Qué tengo que explicar sobre complejidad y costes?

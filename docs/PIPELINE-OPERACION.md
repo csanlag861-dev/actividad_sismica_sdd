@@ -16,6 +16,7 @@ guardar `.env` ni secretos en Git. Las variables principales son:
 | `USGS_TIMEOUT_SECONDS` | `8` | Timeout por solicitud live. |
 | `SOURCE_ARCHIVE_DIR` | `/data/source-archives` | Directorio del volumen persistente compartido por live e histórico. |
 | `REPLAY_INTERVAL_SECONDS` | `2` | Pausa opcional entre Features históricas; `0` desactiva la pausa. |
+| Retención Kafka | `168` horas | Retención limitada del log; los datos procesados e históricos se conservan en PostgreSQL y en el archivo de origen. |
 
 Compose monta el volumen nombrado `source_archives` en el productor. El modo
 live y el comando de histórico usan el mismo servicio y, por tanto, el mismo
@@ -116,9 +117,9 @@ archivos manualmente mientras Kafka todavía pueda entregar mensajes pendientes.
 
 ## Migraciones y comprobaciones
 
-Las migraciones aditivas `0003_live_provenance` a
-`0006_ingestion_intervals` mantienen las filas existentes y no calculan hashes
-retroactivos. La revisión de esquema vigente es `0006_ingestion_intervals`.
+Las migraciones aditivas mantienen las filas existentes y no calculan hashes
+retroactivos. La revisión vigente añade el índice temporal
+`ix_event_version_mode_event_time` a la tabla de versiones.
 Después de levantar una instalación actualizada:
 
 ```sh

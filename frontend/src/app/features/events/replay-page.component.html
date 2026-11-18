@@ -1,0 +1,73 @@
+<section class="replay-page">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">MODO AISLADO · DATOS HISTÓRICOS</p>
+      <h1>Reproducción sísmica</h1>
+      <p class="lede">Consulta el histórico almacenado en el modo replay. Estos resultados no se mezclan con la actividad en vivo.</p>
+    </div>
+    <span class="replay-badge" role="status">REPRODUCCIÓN</span>
+  </div>
+
+  <form class="replay-filters" (ngSubmit)="applyFilters()" novalidate>
+    <label>
+      <span>Desde <small>UTC, inclusive</small></span>
+      <input type="datetime-local" name="start" [(ngModel)]="startValue">
+    </label>
+    <label>
+      <span>Hasta <small>UTC, exclusive</small></span>
+      <input type="datetime-local" name="end" [(ngModel)]="endValue">
+    </label>
+    <label>
+      <span>Magnitud mínima</span>
+      <input type="number" step="any" name="minMagnitude" [(ngModel)]="minMagnitude">
+    </label>
+    <button class="apply-button" type="submit">Consultar replay</button>
+    @if (filterError) {
+      <p class="filter-error" role="alert">{{ filterError }}</p>
+    }
+  </form>
+
+  <section class="replay-context" aria-label="Contexto de la reproducción">
+    <strong>Fuente consultada: replay</strong>
+    <span>Periodo: {{ filters.start }} – {{ filters.end }} UTC</span>
+    @if (events?.metadata?.last_ingestion; as lastIngestion) {
+      <span>Último procesamiento histórico: {{ lastIngestion | date: "medium" : "UTC" }} UTC</span>
+    }
+  </section>
+
+  @if (loading) {
+    <p class="replay-status" role="status">Consultando eventos históricos…</p>
+  } @else if (errorMessage) {
+    <p class="replay-error" role="alert">No se pudo consultar la reproducción: {{ errorMessage }}</p>
+  } @else if (events && events.features.length === 0) {
+    <p class="replay-status" role="status">No hay eventos replay para el periodo y los filtros seleccionados.</p>
+  }
+
+  <div class="map-detail-grid">
+    <div class="map-column">
+      <div class="section-title">
+        <h2>Mapa de reproducción</h2>
+        @if (events; as collection) {
+          <span>{{ collection.features.length }} de {{ collection.metadata.total_count ?? collection.metadata.count }} eventos recibidos</span>
+        }
+      </div>
+      <app-event-map
+        [events]="events"
+        [selectedId]="selectedId()"
+        (eventSelected)="selectEvent($event)"
+      />
+      @if (events?.metadata?.truncated) {
+        <p class="truncated-note">El mapa muestra los primeros 100 resultados; la tabla permite recorrer todas las páginas.</p>
+      }
+    </div>
+    <app-event-detail [event]="selectedEvent" />
+  </div>
+
+  <app-events-table
+    [filters]="filters"
+    mode="replay"
+    [queryId]="queryId()"
+    [selectedId]="selectedId()"
+    (eventSelected)="selectEvent($event)"
+  />
+</section>

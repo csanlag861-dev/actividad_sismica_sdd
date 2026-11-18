@@ -127,6 +127,34 @@ test("sends the browser warning header and allows successful empty collections",
   client.dispose();
 });
 
+test("requests replay explicitly and validates the selected event mode", async () => {
+  let requestUrl;
+  const client = createApiClient({
+    baseUrl: "https://api.example",
+    fetchImpl: async (url) => {
+      requestUrl = url;
+      return new Response(JSON.stringify({
+        ...collection(3),
+        metadata: { ...collection(3).metadata, mode: "replay" },
+      }), { status: 200 });
+    },
+  });
+
+  const result = await client.fetchEvents(
+    { start: "2025-01-01T00:00:00Z", end: "2025-01-02T00:00:00Z" },
+    { limit: 100, offset: 0 },
+    "replay",
+  );
+
+  const request = new URL(requestUrl);
+  assert.equal(request.searchParams.get("mode"), "replay");
+  assert.equal(request.searchParams.get("start"), "2025-01-01T00:00:00Z");
+  assert.equal(request.searchParams.get("limit"), "100");
+  assert.equal(result.metadata.mode, "replay");
+  await assert.rejects(client.fetchEvents({}, null, "archive"), TypeError);
+  client.dispose();
+});
+
 test("accepts previous event collections without traceability", async () => {
   const client = createApiClient({
     baseUrl: "https://api.example",

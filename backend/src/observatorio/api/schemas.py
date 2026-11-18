@@ -28,6 +28,7 @@ class EventPageRequest:
     filters: QueryFilters
     limit: int
     offset: int
+    mode: str
 
 
 @dataclass(frozen=True)
@@ -53,7 +54,7 @@ class ComparisonRequest:
 
 
 _FILTER_PARAMETERS = {"start", "end", "min_mag", "country_id"}
-_EVENT_PARAMETERS = _FILTER_PARAMETERS | {"limit", "offset"}
+_EVENT_PARAMETERS = _FILTER_PARAMETERS | {"limit", "offset", "mode"}
 _MALFORMED_PERCENT = re.compile(r"%(?![0-9a-fA-F]{2})")
 _COUNTRY_ID = re.compile(r"^[A-Z]{3}$")
 _FINITE_NUMBER = re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$")
@@ -153,6 +154,9 @@ def parse_event_page_request(
         {key: value for key, value in values.items() if key in _FILTER_PARAMETERS},
         now=now,
     )
+    mode = values.get("mode", "live")
+    if mode not in {"live", "replay"}:
+        raise _invalid("mode", "must be live or replay")
 
     raw_limit = values.get("limit", "25")
     if not _NON_NEGATIVE_INTEGER.fullmatch(raw_limit):
@@ -165,7 +169,7 @@ def parse_event_page_request(
     if not _NON_NEGATIVE_INTEGER.fullmatch(raw_offset):
         raise _invalid("offset", "must be a non-negative integer")
 
-    return EventPageRequest(filters=filters, limit=limit, offset=int(raw_offset))
+    return EventPageRequest(filters=filters, limit=limit, offset=int(raw_offset), mode=mode)
 
 
 def parse_comparison_request(body: object) -> ComparisonRequest:

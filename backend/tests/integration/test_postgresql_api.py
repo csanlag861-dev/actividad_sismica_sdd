@@ -60,7 +60,7 @@ async def test_postgresql_api_query_health_schema_and_statistics(postgres_api_co
         await session.execute(
             text(
                 "INSERT INTO alembic_version (version_num) "
-                "VALUES ('0006_ingestion_intervals')"
+                "VALUES ('0007_event_time_query_index')"
             )
         )
         await session.commit()

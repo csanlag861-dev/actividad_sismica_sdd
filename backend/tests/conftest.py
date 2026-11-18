@@ -79,7 +79,7 @@ async def api_context(monkeypatch):
         await connection.run_sync(Base.metadata.create_all)
         await connection.execute(text("CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)"))
         await connection.execute(
-            text("INSERT INTO alembic_version (version_num) VALUES ('0006_ingestion_intervals')")
+            text("INSERT INTO alembic_version (version_num) VALUES ('0007_event_time_query_index')")
         )
     factory = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -128,7 +128,7 @@ async def postgres_api_context():
                 text("CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)")
             )
             await connection.execute(
-                text("INSERT INTO alembic_version (version_num) VALUES ('0006_ingestion_intervals')")
+                text("INSERT INTO alembic_version (version_num) VALUES ('0007_event_time_query_index')")
             )
         factory = async_sessionmaker(test_engine, expire_on_commit=False)
 

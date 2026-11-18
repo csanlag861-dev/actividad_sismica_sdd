@@ -12,7 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from observatorio.api import readiness
 from observatorio.api.bootstrap import REQUIRED_TABLES, expected_revision
-from observatorio.api.queries import latest_successful_live_ingestion, query_current_event_page, query_current_events
+from observatorio.api.queries import (
+    latest_successful_ingestion,
+    latest_successful_live_ingestion,
+    query_current_event_page,
+    query_current_events,
+)
 from observatorio.api.schemas import (
     ApiError,
     ComparisonRequest,
@@ -101,8 +106,9 @@ async def get_events(
         page.filters,
         limit=page.limit,
         offset=page.offset,
+        mode=page.mode,
     )
-    last_ingestion = await latest_successful_live_ingestion(session)
+    last_ingestion = await latest_successful_ingestion(session, mode=page.mode)
     generated = datetime.now(timezone.utc)
     features = []
     for row in rows:
@@ -137,7 +143,7 @@ async def get_events(
         "metadata": {
             "generated": epoch_milliseconds(generated),
             "last_ingestion": epoch_milliseconds(last_ingestion),
-            "mode": "live",
+            "mode": page.mode,
             "count": len(features),
             "total_count": total_count,
             "offset": page.offset,

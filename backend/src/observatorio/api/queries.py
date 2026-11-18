@@ -121,13 +121,28 @@ async def query_current_event_page(
     return rows, total_count
 
 
-async def latest_successful_live_ingestion(session: AsyncSession) -> datetime | None:
+async def latest_successful_ingestion(
+    session: AsyncSession,
+    *,
+    mode: str = "live",
+) -> datetime | None:
+    ingestion_time = (
+        IngestionRun.request_end
+        if mode == "live"
+        else IngestionRun.finished_at
+    )
+    conditions = [
+        IngestionRun.mode == mode,
+        IngestionRun.outcome == "succeeded",
+        ingestion_time.is_not(None),
+    ]
+    if mode == "live":
+        conditions.append(IngestionRun.source == "usgs-live")
     result = await session.scalar(
-        select(func.max(IngestionRun.request_end)).where(
-            IngestionRun.mode == "live",
-            IngestionRun.source == "usgs-live",
-            IngestionRun.outcome == "succeeded",
-            IngestionRun.request_end.is_not(None),
-        )
+        select(func.max(ingestion_time)).where(*conditions)
     )
     return result
+
+
+async def latest_successful_live_ingestion(session: AsyncSession) -> datetime | None:
+    return await latest_successful_ingestion(session, mode="live")

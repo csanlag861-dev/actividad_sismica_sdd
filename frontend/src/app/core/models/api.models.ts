@@ -10,6 +10,8 @@ export interface EventPageOptions {
   offset?: number;
 }
 
+export type EventMode = "live" | "replay";
+
 export interface EventFeature {
   type: "Feature";
   id: string;
@@ -46,7 +48,7 @@ export interface EventCollection {
   metadata: {
     generated: number;
     last_ingestion: number | null;
-    mode: string;
+    mode: EventMode;
     count: number;
     truncated: boolean;
     total_count?: number;

@@ -58,6 +58,7 @@ def test_event_page_request_applies_defaults_without_changing_statistics_filters
 
     assert page.limit == 25
     assert page.offset == 0
+    assert page.mode == "live"
     assert page.filters.start == datetime(2026, 11, 16, 12, tzinfo=timezone.utc)
     with pytest.raises(ApiError):
         parse_query_filters(b"limit=25", now=now)
@@ -82,3 +83,16 @@ def test_event_page_request_accepts_supported_sizes(limit: int) -> None:
     page = parse_event_page_request(f"limit={limit}&offset=75".encode())
     assert page.limit == limit
     assert page.offset == 75
+
+
+def test_event_page_request_accepts_replay_mode() -> None:
+    page = parse_event_page_request(b"mode=replay")
+
+    assert page.mode == "replay"
+
+
+def test_event_page_request_rejects_unknown_mode() -> None:
+    with pytest.raises(ApiError) as error_info:
+        parse_event_page_request(b"mode=archive")
+
+    assert error_info.value.details[0]["parameter"] == "mode"

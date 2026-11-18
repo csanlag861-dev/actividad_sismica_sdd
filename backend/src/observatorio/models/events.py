@@ -11,6 +11,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Numeric,
     PrimaryKeyConstraint,
     String,
@@ -29,6 +30,12 @@ class EventVersion(Base):
     __tablename__ = "event_version"
     __table_args__ = (
         PrimaryKeyConstraint("mode", "event_id", "updated_at", name="pk_event_version"),
+        Index(
+            "ix_event_version_mode_event_time",
+            "mode",
+            "event_time",
+            "event_id",
+        ),
         CheckConstraint("mode IN ('live', 'replay')", name="ck_event_version_mode"),
         CheckConstraint("longitude BETWEEN -180 AND 180", name="ck_event_version_longitude_range"),
         CheckConstraint("latitude BETWEEN -90 AND 90", name="ck_event_version_latitude_range"),

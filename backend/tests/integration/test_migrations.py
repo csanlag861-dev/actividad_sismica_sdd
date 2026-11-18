@@ -33,6 +33,13 @@ async def test_model_metadata_creates_required_tables() -> None:
     await engine.dispose()
 
 
+def test_event_time_index_matches_recent_event_queries() -> None:
+    from observatorio.models import EventVersion
+
+    indexes = {index.name: index for index in EventVersion.__table__.indexes}
+    assert "ix_event_version_mode_event_time" in indexes
+
+
 @pytest.mark.asyncio
 async def test_seed_country_catalog_is_idempotent() -> None:
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")

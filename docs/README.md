@@ -1,10 +1,20 @@
-# Material del observatorio sísmico
+# Observatorio de actividad sísmica
 
-Empieza por `ENUNCIADO.md`. Para una explicación paso a paso, consulta `FAQ-ALUMNADO.md`: contiene preguntas frecuentes, ejemplos de revisiones y duplicados y un itinerario de trabajo. Este paquete aporta el enunciado y la base cartográfica, no una solución completa del proyecto.
+El proyecto implementa el pipeline, API y panel descritos en `ENUNCIADO.md`.
+Para arrancarlo desde la raíz, sigue [`../README.md`](../README.md). Este
+documento conserva la explicación histórica del mapa del material de partida
+y amplía la referencia técnica de frontend; no debe interpretarse como una
+lista de componentes aún pendientes. La aplicación actual usa MapLibre, no
+Leaflet.
 
-## 1. Ejecutar el mapa de demostración
+## 1. Mapa de demostración del material de partida
 
-Requisitos: Node.js 22.12 o posterior dentro de la rama 22, o Node 24; npm; acceso a Internet para instalar dependencias y descargar el mapa base.
+La siguiente descripción se refiere al mapa original del paquete docente; el
+modo de ejecución actual está en el README de raíz.
+
+El paquete original requería Node.js 22.12 o posterior dentro de la rama 22, o
+Node 24; npm; acceso a Internet para instalar dependencias y descargar el mapa
+base.
 
 ```bash
 cd frontend
@@ -12,11 +22,14 @@ npm ci
 npm start
 ```
 
-Abre http://localhost:4200 . Verás fronteras reales de países y **cuatro eventos ficticios**. Comprueba zoom, desplazamiento, selector de capas y fichas al pulsar. Si OpenStreetMap no responde, desactiva esa capa: las fronteras y puntos incluidos siguen siendo locales.
+En la muestra inicial se veían fronteras y **cuatro eventos ficticios**. Esos
+puntos solo servían para probar la cartografía y no son datos sísmicos reales.
 
-Se fija Angular 20.3, ngx-leaflet 20.0 y Leaflet 1.9.4 como combinación reproducible; no se pretende elegir las últimas versiones. Para un proyecto Angular existente, selecciona la versión de ngx-leaflet compatible con tu Angular en su changelog. No copies este package.json sobre un proyecto ajeno.
+La base inicial fijaba Angular 20.3, ngx-leaflet 20.0 y Leaflet 1.9.4. La
+implementación actual conserva Angular 20.3 y usa MapLibre, deck.gl y Cesium;
+consulta `frontend/package.json` y `FUENTES-Y-LICENCIAS.md`.
 
-## 2. Qué archivos dibujan el mapa
+## 2. Archivos del mapa de partida
 
 | Archivo | Función |
 |---|---|
@@ -86,11 +99,19 @@ No requiere SSR. Si integras el componente en una aplicación SSR existente, car
 
 `config.json` se copia al build: cuando cambies el dominio del backend, publica una nueva versión o actualiza el archivo servido por tu procedimiento de despliegue. No guardes claves en ese archivo público.
 
-## 5. Lo que debes desarrollar
+## 5. Implementación del proyecto
 
-Productor, consumidor, almacenamiento, API, integración espacial, agregaciones, filtros y gráficas. El mapa se entrega para que el trabajo se centre en los datos. La clasificación por país que aparece en el popup la entrega el backend; dibujar fronteras no calcula automáticamente esa clasificación.
+Productor, consumidor, persistencia, API, integración espacial, agregaciones,
+filtros y gráficas están implementados en `backend/` y `frontend/src/`. El
+mapa cartográfico inicial fue reemplazado por un explorador con MapLibre, tabla
+paginada, comparador y vista opcional de globo Cesium. La clasificación por
+país la calcula el consumidor mediante el catálogo Natural Earth; dibujar
+fronteras no la sustituye.
 
-En `ENUNCIADO.md` tienes las pruebas y la rúbrica. En `FUENTES-Y-LICENCIAS.md`, procedencia y condiciones. En `VALIDACION.md`, las comprobaciones realizadas sobre el material base.
+Consulta el README de raíz para ejecutar el proyecto y
+[`memoria-evaluacion.md`](memoria-evaluacion.md) para el modelo, análisis,
+mediciones, pruebas y límites de evaluación. `VALIDACION.md` distingue la
+validación del paquete de partida de las comprobaciones del proyecto actual.
 
 ## 6. Cómo documentar la calidad, sin añadir una aplicación de informes
 

@@ -16,7 +16,10 @@ export class ApiHttpError extends Error {
   }
 }
 
-function serializeFilters(filters = {}, page = null) {
+function serializeFilters(filters = {}, page = null, mode = "live") {
+  if (!["live", "replay"].includes(mode)) {
+    throw new TypeError("Event mode must be live or replay");
+  }
   const allowed = new Set(["start", "end", "min_mag", "country_id"]);
   const entries = Object.entries(filters).filter(([, value]) => value !== undefined);
   for (const [key] of entries) {
@@ -64,6 +67,9 @@ function serializeFilters(filters = {}, page = null) {
     }
     params.set("limit", String(limit));
     params.set("offset", String(offset));
+  }
+  if (mode === "replay") {
+    params.set("mode", mode);
   }
   return params.size > 0 ? `?${params}` : "";
 }
@@ -114,7 +120,7 @@ function isEventCollection(data) {
     && isRecord(data.metadata)
     && Number.isFinite(data.metadata.generated)
     && isFiniteOrNull(data.metadata.last_ingestion)
-    && typeof data.metadata.mode === "string"
+    && ["live", "replay"].includes(data.metadata.mode)
     && Number.isInteger(data.metadata.count)
     && data.metadata.count >= 0
     && typeof data.metadata.truncated === "boolean"
@@ -537,11 +543,11 @@ export function createApiClient({
       return { ...resourceStates[resource] };
     },
 
-    async fetchEvents(filters = {}, page = null) {
+    async fetchEvents(filters = {}, page = null, mode = "live") {
       if (disposed) {
         throw new ApiTransportError("API client has been disposed");
       }
-      const query = serializeFilters(filters, page);
+      const query = serializeFilters(filters, page, mode);
       const requestEndpoint = `${endpoint}${query}`;
 
       const controller = new AbortController();

@@ -8,6 +8,7 @@ import {
 import {
   EventCollection,
   EventFilters,
+  EventMode,
   EventPageOptions,
   HealthResponse,
   StatisticsResponse,
@@ -27,13 +28,17 @@ export class ObservatoryApiService {
     this.destroyRef.onDestroy(() => this.client.dispose());
   }
 
-  fetchEvents(filters: EventFilters = {}, page: EventPageOptions = {}): Promise<EventCollection> {
-    return this.client.fetchEvents(filters, page);
+  fetchEvents(
+    filters: EventFilters = {},
+    page: EventPageOptions = {},
+    mode: EventMode = "live",
+  ): Promise<EventCollection> {
+    return this.client.fetchEvents(filters, page, mode);
   }
 
-  async fetchAllEvents(filters: EventFilters = {}): Promise<EventCollection> {
+  async fetchAllEvents(filters: EventFilters = {}, mode: EventMode = "live"): Promise<EventCollection> {
     const pageSize = 100;
-    const firstPage = await this.fetchEvents(filters, { limit: pageSize, offset: 0 });
+    const firstPage = await this.fetchEvents(filters, { limit: pageSize, offset: 0 }, mode);
     const features = [...firstPage.features];
     const totalCount = firstPage.metadata.total_count;
     let offset = pageSize;
@@ -44,7 +49,7 @@ export class ObservatoryApiService {
         ? features.length < totalCount
         : lastPage.metadata.truncated
     ) {
-      lastPage = await this.fetchEvents(filters, { limit: pageSize, offset });
+      lastPage = await this.fetchEvents(filters, { limit: pageSize, offset }, mode);
       if (!lastPage.features.length) break;
       features.push(...lastPage.features);
       offset += pageSize;

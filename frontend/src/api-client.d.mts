@@ -9,6 +9,7 @@ import type {
 } from "./app/core/models/api.models";
 
 export type ApiResource = "events" | "statistics" | "health" | "comparison";
+export type EventMode = "live" | "replay";
 
 export interface ApiClientErrorState {
   kind: "http" | "transport";
@@ -49,7 +50,7 @@ export class ApiHttpError extends Error {
 export interface ApiClient {
   getState(): ApiClientResourceState<EventCollection>;
   getResourceState<R extends ApiResource>(resource: R): ApiClientResourceState<ApiResourceData[R]>;
-  fetchEvents(filters?: EventFilters, page?: EventPageOptions): Promise<EventCollection>;
+  fetchEvents(filters?: EventFilters, page?: EventPageOptions, mode?: EventMode): Promise<EventCollection>;
   fetchStatistics(filters?: EventFilters): Promise<StatisticsResponse>;
   fetchHealth(): Promise<HealthResponse>;
   fetchComparison(request: TemporalComparisonRequest): Promise<TemporalComparisonResponse>;

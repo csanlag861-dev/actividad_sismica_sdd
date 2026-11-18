@@ -8,7 +8,7 @@ import {
   SimpleChanges,
   inject,
 } from "@angular/core";
-import { EventCollection, EventFeature, EventFilters } from "../../core/models/api.models";
+import { EventCollection, EventFeature, EventFilters, EventMode } from "../../core/models/api.models";
 import { ObservatoryApiService } from "../../core/api/observatory-api.service";
 
 @Component({
@@ -21,6 +21,7 @@ export class EventsTableComponent implements OnChanges {
   private readonly api = inject(ObservatoryApiService);
   private requestId = 0;
   @Input() filters: EventFilters = {};
+  @Input() mode: EventMode = "live";
   @Input() queryId = 0;
   @Input() selectedId: string | null = null;
   @Output() eventSelected = new EventEmitter<EventFeature>();
@@ -57,7 +58,11 @@ export class EventsTableComponent implements OnChanges {
       this.offset = 0;
       this.events = null;
     }
-    if (changes["filters"] || changes["queryId"]) {
+    if (changes["mode"] && !changes["mode"].firstChange) {
+      this.offset = 0;
+      this.events = null;
+    }
+    if (changes["filters"] || changes["mode"] || changes["queryId"]) {
       void this.loadPage();
     }
   }
@@ -70,7 +75,7 @@ export class EventsTableComponent implements OnChanges {
       const response = await this.api.fetchEvents(this.filters, {
         limit: this.pageSize,
         offset: this.offset,
-      });
+      }, this.mode);
       if (requestId !== this.requestId) return;
       if (
         response.features.length === 0

@@ -183,9 +183,9 @@ Task: T021 Add the API contract examples and tests in backend/tests/contract/ an
 - [X] T033 Indicate when the globe is displaying a previous successful event response after a refresh fails, including its potentially stale status per FR-020, US4/AC4 (partial).
 - [ ] T034 POSPUESTA por decisión del usuario: no ejecutar la batería completa de aceptación manual. Se hicieron comprobaciones parciales en navegador; quedan sin validar todos los escenarios integrados de paginación, comparación, MapLibre/deck.gl y Cesium/WebGL.
 - [ ] T035 POSPUESTA at the user's request until the 1,000-event fixture and performance-test environment are available; then measure and record all 100 page-change durations and p95 results for both tables at page sizes 25, 50, and 100 per SC-002, T029 (missing).
-- [ ] T036 POSPUESTA por decisión del usuario: no realizar ahora la evaluación con diez participantes ni registrar resultados de SC-003/SC-006.
+- [ ] T036 Pendiente de ejecución: el protocolo SC-003/SC-006 está preparado en `docs/evaluacion-usabilidad-007.md`; requiere fixture de prueba aislada y diez participantes reales. No registrar resultados hasta ejecutar la evaluación.
 - [X] T037 Retrieve and combine all event pages for the shared 2D map and Cesium globe using `ObservatoryApiService.fetchAllEvents`; preserve explicit incomplete-result messaging and verify multi-page retrieval in `observatory-api.service.spec.ts`.
 
 ### Cierre de implementación
 
-La implementación de la spec 007 se considera cerrada y no bloquea el inicio de otra spec. T034 y T036 quedan pendientes por decisión del usuario; T035 continúa pospuesta hasta disponer del fixture y del entorno de medición. Estas validaciones no se marcan como completadas ni se consideran evidencia de aceptación.
+La implementación de la spec 007 se considera cerrada y no bloquea el inicio de otra spec. T034 y T036 continúan pendientes de validación; T035 sigue pospuesta hasta disponer del fixture y del entorno de medición. El protocolo T036 está preparado, pero ninguna de estas validaciones se marca como completada ni se considera evidencia de aceptación.
