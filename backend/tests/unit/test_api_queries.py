@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from observatorio.api.schemas import ApiError, parse_query_filters
+from observatorio.api.schemas import ApiError, parse_event_page_request, parse_query_filters
 
 
 def test_query_filters_normalize_offsets_and_apply_defaults() -> None:
@@ -50,3 +50,35 @@ def test_unknown_query_parameter_name_is_not_reflected() -> None:
     assert error.details == [
         {"parameter": "query", "reason": "contains an unknown query parameter"}
     ]
+
+
+def test_event_page_request_applies_defaults_without_changing_statistics_filters() -> None:
+    now = datetime(2026, 11, 17, 12, tzinfo=timezone.utc)
+    page = parse_event_page_request(b"", now=now)
+
+    assert page.limit == 25
+    assert page.offset == 0
+    assert page.filters.start == datetime(2026, 11, 16, 12, tzinfo=timezone.utc)
+    with pytest.raises(ApiError):
+        parse_query_filters(b"limit=25", now=now)
+
+
+@pytest.mark.parametrize("limit", [b"24", b"101", b"25.0", b"nan", b""])
+def test_event_page_request_rejects_invalid_page_sizes(limit: bytes) -> None:
+    with pytest.raises(ApiError) as error_info:
+        parse_event_page_request(b"limit=" + limit)
+    assert error_info.value.details[0]["parameter"] == "limit"
+
+
+@pytest.mark.parametrize("offset", [b"-1", b"1.2", b"abc", b""])
+def test_event_page_request_rejects_invalid_offsets(offset: bytes) -> None:
+    with pytest.raises(ApiError) as error_info:
+        parse_event_page_request(b"offset=" + offset)
+    assert error_info.value.details[0]["parameter"] == "offset"
+
+
+@pytest.mark.parametrize("limit", [25, 50, 100])
+def test_event_page_request_accepts_supported_sizes(limit: int) -> None:
+    page = parse_event_page_request(f"limit={limit}&offset=75".encode())
+    assert page.limit == limit
+    assert page.offset == 75

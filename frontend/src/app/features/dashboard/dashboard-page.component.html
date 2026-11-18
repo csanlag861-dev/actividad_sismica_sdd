@@ -116,12 +116,13 @@
         </div>
         <app-event-detail [event]="selectedEvent" />
       </div>
-      <app-events-table
-        [events]="displayedCollection"
-        [selectedId]="selectedId"
-        (eventSelected)="selectEvent($event)"
-      />
     }
+    <app-events-table
+      [filters]="tableFilters"
+      [queryId]="eventSnapshot.readAt ?? 0"
+      [selectedId]="selectedId"
+      (eventSelected)="selectEvent($event)"
+    />
   </section>
 
   <section class="dashboard-section" aria-labelledby="statistics-title">

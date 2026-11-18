@@ -51,8 +51,8 @@ def create_app(*, allowed_origins: str | list[str] | None = None) -> FastAPI:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_methods=["GET", "OPTIONS"],
-        allow_headers=["ngrok-skip-browser-warning"],
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["ngrok-skip-browser-warning", "content-type"],
         allow_credentials=False,
     )
     application.include_router(router)

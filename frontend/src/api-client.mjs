@@ -16,7 +16,7 @@ export class ApiHttpError extends Error {
   }
 }
 
-function serializeFilters(filters = {}) {
+function serializeFilters(filters = {}, page = null) {
   const allowed = new Set(["start", "end", "min_mag", "country_id"]);
   const entries = Object.entries(filters).filter(([, value]) => value !== undefined);
   for (const [key] of entries) {
@@ -53,6 +53,18 @@ function serializeFilters(filters = {}) {
   for (const [key, value] of entries) {
     params.set(key, String(value));
   }
+  if (page !== null) {
+    const limit = page.limit ?? 25;
+    const offset = page.offset ?? 0;
+    if (![25, 50, 100].includes(limit)) {
+      throw new TypeError("Event page size must be 25, 50, or 100");
+    }
+    if (!Number.isSafeInteger(offset) || offset < 0) {
+      throw new TypeError("Event page offset must be a non-negative integer");
+    }
+    params.set("limit", String(limit));
+    params.set("offset", String(offset));
+  }
   return params.size > 0 ? `?${params}` : "";
 }
 
@@ -84,6 +96,19 @@ function isEventTraceability(value) {
 }
 
 function isEventCollection(data) {
+  const metadata = isRecord(data) && isRecord(data.metadata) ? data.metadata : {};
+  const pageMetadataValid = !(
+    "total_count" in metadata
+    || "offset" in metadata
+    || "limit" in metadata
+  ) || (
+    Number.isInteger(metadata.total_count)
+    && metadata.total_count >= metadata.count
+    && Number.isInteger(metadata.offset)
+    && metadata.offset >= 0
+    && [25, 50, 100].includes(metadata.limit)
+    && metadata.count <= metadata.limit
+  );
   return isRecord(data)
     && data.type === "FeatureCollection"
     && isRecord(data.metadata)
@@ -93,6 +118,7 @@ function isEventCollection(data) {
     && Number.isInteger(data.metadata.count)
     && data.metadata.count >= 0
     && typeof data.metadata.truncated === "boolean"
+    && pageMetadataValid
     && Array.isArray(data.features)
     && data.features.every((feature) => isRecord(feature)
       && feature.type === "Feature"
@@ -179,6 +205,116 @@ function isStatisticsResponse(data) {
     && typeof comparison.unit === "string"
     && (comparison.daily_rate_difference === undefined || Number.isFinite(comparison.daily_rate_difference))
     && (comparison.daily_rate_ratio === undefined || Number.isFinite(comparison.daily_rate_ratio));
+}
+
+function isStringRecord(value) {
+  return isRecord(value)
+    && Object.values(value).every((item) => typeof item === "string");
+}
+
+function isComparisonPopulation(value) {
+  if (!isRecord(value) || typeof value.type !== "string") return false;
+  if (value.type === "all" || value.type === "unassigned") {
+    return Object.keys(value).length === 1;
+  }
+  return value.type === "country"
+    && Object.keys(value).length === 2
+    && typeof value.country_id === "string"
+    && /^[A-Z]{3}$/.test(value.country_id);
+}
+
+function isComparisonRequest(value) {
+  if (!isRecord(value)
+    || !["live", "replay"].includes(value.mode)
+    || !Array.isArray(value.groups)
+    || value.groups.length < 2
+    || value.groups.length > 5) {
+    return false;
+  }
+  if (Object.keys(value).some((key) => !["mode", "filters", "groups"].includes(key))) return false;
+  const filters = value.filters ?? {};
+  if (!isRecord(filters)
+    || Object.keys(filters).some((key) => key !== "min_mag")
+    || !(filters.min_mag === undefined || isFiniteOrNull(filters.min_mag))) {
+    return false;
+  }
+  const ids = new Set();
+  const labels = new Set();
+  return value.groups.every((group) => {
+    if (!isRecord(group)
+      || Object.keys(group).some((key) => !["id", "label", "period", "population"].includes(key))
+      || typeof group.id !== "string"
+      || !group.id.trim()
+      || typeof group.label !== "string"
+      || !group.label.trim()
+      || ids.has(group.id)
+      || labels.has(group.label)
+      || !isPeriod(group.period)
+      || !isComparisonPopulation(group.population)) {
+      return false;
+    }
+    ids.add(group.id);
+    labels.add(group.label);
+    return true;
+  });
+}
+
+function isComparisonGroupResult(value) {
+  return isRecord(value)
+    && typeof value.id === "string"
+    && typeof value.label === "string"
+    && isPeriod(value.period)
+    && isRecord(value.population)
+    && ["all", "country", "unassigned"].includes(value.population.type)
+    && (value.population.country_id === null || typeof value.population.country_id === "string")
+    && (value.population.country_name === null || typeof value.population.country_name === "string")
+    && isRecord(value.coverage)
+    && ["complete", "partial", "unknown"].includes(value.coverage.status)
+    && Number.isFinite(value.coverage.covered_days)
+    && value.coverage.covered_days >= 0
+    && Number.isFinite(value.coverage.period_days)
+    && value.coverage.period_days > 0
+    && Number.isInteger(value.observed_count)
+    && value.observed_count >= 0
+    && isStringRecord(value.unavailable_metrics)
+    && isFiniteOrNull(value.daily_rate)
+    && isRecord(value.distributions)
+    && (value.distributions.magnitude === null || isDistribution(value.distributions.magnitude))
+    && (value.distributions.depth_km === null || isDistribution(value.distributions.depth_km));
+}
+
+function isPairwiseComparison(value) {
+  return isRecord(value)
+    && typeof value.first_group_id === "string"
+    && typeof value.second_group_id === "string"
+    && isFiniteOrNull(value.observed_count_difference)
+    && isFiniteOrNull(value.daily_rate_difference)
+    && isStringRecord(value.unavailable_reasons)
+    && isRecord(value.distribution_percentage_point_differences)
+    && ["magnitude", "depth_km"].every((metric) => {
+      const differences = value.distribution_percentage_point_differences[metric];
+      return differences === null || (
+        Array.isArray(differences)
+        && differences.every((difference) => isRecord(difference)
+          && Number.isFinite(difference.min_inclusive)
+          && Number.isFinite(difference.max_exclusive)
+          && difference.min_inclusive < difference.max_exclusive
+          && Number.isFinite(difference.difference))
+      );
+    });
+}
+
+function isTemporalComparisonResponse(data) {
+  return isRecord(data)
+    && ["live", "replay"].includes(data.mode)
+    && isRecord(data.filters)
+    && isFiniteOrNull(data.filters.min_mag)
+    && Array.isArray(data.groups)
+    && data.groups.length >= 2
+    && data.groups.length <= 5
+    && data.groups.every(isComparisonGroupResult)
+    && Array.isArray(data.pairwise_differences)
+    && data.pairwise_differences.every(isPairwiseComparison);
 }
 
 function isHealthResponse(data) {
@@ -277,6 +413,7 @@ export function createApiClient({
     events: state,
     statistics: { lastSuccess: null, lastAttempt: null, error: null, possiblyStale: false },
     health: { lastSuccess: null, lastAttempt: null, error: null, possiblyStale: false },
+    comparison: { lastSuccess: null, lastAttempt: null, error: null, possiblyStale: false },
   };
 
   const updateState = (changes) => {
@@ -284,7 +421,13 @@ export function createApiClient({
     resourceStates.events = state;
   };
 
-  const requestResource = async (resource, path, validator, filters = {}) => {
+  const requestResource = async (
+    resource,
+    path,
+    validator,
+    filters = {},
+    { method = "GET", body } = {},
+  ) => {
     if (disposed) {
       throw new ApiTransportError("API client has been disposed");
     }
@@ -304,16 +447,18 @@ export function createApiClient({
     }, timeoutMs);
 
     try {
-      const query = resource === "health" ? "" : serializeFilters(filters);
+      const query = method !== "GET" || resource === "health" ? "" : serializeFilters(filters);
       const endpointUrl = `${baseUrl.replace(/\/+$/, "")}${path}${query}`;
       const response = await fetchImpl(endpointUrl, {
-        method: "GET",
+        method,
         headers: {
           Accept: "application/json",
           "ngrok-skip-browser-warning": "true",
+          ...(body === undefined ? {} : { "Content-Type": "application/json" }),
         },
         credentials: "omit",
         signal: controller.signal,
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
 
       let data;
@@ -392,11 +537,11 @@ export function createApiClient({
       return { ...resourceStates[resource] };
     },
 
-    async fetchEvents(filters = {}) {
+    async fetchEvents(filters = {}, page = null) {
       if (disposed) {
         throw new ApiTransportError("API client has been disposed");
       }
-      const query = serializeFilters(filters);
+      const query = serializeFilters(filters, page);
       const requestEndpoint = `${endpoint}${query}`;
 
       const controller = new AbortController();
@@ -499,6 +644,19 @@ export function createApiClient({
         "health",
         "/api/salud",
         isHealthResponse,
+      );
+    },
+
+    async fetchComparison(request) {
+      if (!isComparisonRequest(request)) {
+        throw new TypeError("Temporal comparison request is invalid");
+      }
+      return requestResource(
+        "comparison",
+        "/api/comparaciones",
+        isTemporalComparisonResponse,
+        {},
+        { method: "POST", body: request },
       );
     },
 

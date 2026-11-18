@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@deck.gl/core": "^9.4.1",
+    "@deck.gl/layers": "^9.4.1",
+    "@deck.gl/maplibre": "^9.4.1",
+    "cesium": "^1.147.0",
+    "maplibre-gl": "^6.19.0"
+  }
+}

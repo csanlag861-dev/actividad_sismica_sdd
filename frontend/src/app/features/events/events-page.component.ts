@@ -1,6 +1,6 @@
 import { DatePipe } from "@angular/common";
 import { Component, signal } from "@angular/core";
-import { EventFeature } from "../../core/models/api.models";
+import { EventFeature, EventFilters } from "../../core/models/api.models";
 import { QueryStateService } from "../../core/state/query-state.service";
 import { EventDetailComponent } from "./event-detail.component";
 import { EventFiltersComponent } from "./event-filters.component";
@@ -23,12 +23,19 @@ import { ResourceStatusComponent } from "../../shared/status/resource-status.com
 })
 export class EventsPageComponent {
   readonly selectedId = signal<string | null>(null);
+  private readonly tableSelectedEvent = signal<EventFeature | null>(null);
 
   constructor(readonly queries: QueryStateService) {}
 
   get selectedEvent(): EventFeature | null {
+    const tableEvent = this.tableSelectedEvent();
+    if (tableEvent?.id === this.selectedId()) return tableEvent;
     return this.queries.state().events.data?.features
       .find((event) => event.id === this.selectedId()) ?? null;
+  }
+
+  get tableFilters(): EventFilters {
+    return this.eventSnapshot.filters ?? this.queries.filters();
   }
 
   get eventSnapshot() {
@@ -53,8 +60,10 @@ export class EventsPageComponent {
     return parts.join(" · ");
   }
 
-  selectEvent(id: string): void {
+  selectEvent(event: string | EventFeature): void {
+    const id = typeof event === "string" ? event : event.id;
     this.selectedId.set(id);
+    this.tableSelectedEvent.set(typeof event === "string" ? null : event);
   }
 
   private formatUtc(value: string): string {

@@ -25,6 +25,19 @@ export function markerRadius(magnitude: number | null): number {
   return Math.max(4, Math.min(18, 4 + Math.max(0, magnitude) * 2));
 }
 
+export function latestEventIds(events: EventFeature[]): Set<string> {
+  const validEvents = events.filter((event) =>
+    hasValidEventCoordinates(event)
+    && Number.isFinite(event.properties.time));
+  if (!validEvents.length) return new Set();
+  const latestTime = Math.max(...validEvents.map((event) => event.properties.time));
+  return new Set(
+    validEvents
+      .filter((event) => event.properties.time === latestTime)
+      .map((event) => event.id),
+  );
+}
+
 export function depthBinIndex(depthKm: number): number | null {
   if (!Number.isFinite(depthKm) || depthKm < 0) return null;
   return Math.floor(depthKm / 10);

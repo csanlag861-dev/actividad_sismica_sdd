@@ -1,11 +1,14 @@
 import type {
   EventCollection,
   EventFilters,
+  EventPageOptions,
   HealthResponse,
   StatisticsResponse,
+  TemporalComparisonRequest,
+  TemporalComparisonResponse,
 } from "./app/core/models/api.models";
 
-export type ApiResource = "events" | "statistics" | "health";
+export type ApiResource = "events" | "statistics" | "health" | "comparison";
 
 export interface ApiClientErrorState {
   kind: "http" | "transport";
@@ -28,6 +31,7 @@ type ApiResourceData = {
   events: EventCollection;
   statistics: StatisticsResponse;
   health: HealthResponse;
+  comparison: TemporalComparisonResponse;
 };
 
 export class ApiTransportError extends Error {
@@ -45,9 +49,10 @@ export class ApiHttpError extends Error {
 export interface ApiClient {
   getState(): ApiClientResourceState<EventCollection>;
   getResourceState<R extends ApiResource>(resource: R): ApiClientResourceState<ApiResourceData[R]>;
-  fetchEvents(filters?: EventFilters): Promise<EventCollection>;
+  fetchEvents(filters?: EventFilters, page?: EventPageOptions): Promise<EventCollection>;
   fetchStatistics(filters?: EventFilters): Promise<StatisticsResponse>;
   fetchHealth(): Promise<HealthResponse>;
+  fetchComparison(request: TemporalComparisonRequest): Promise<TemporalComparisonResponse>;
   dispose(): void;
 }
 

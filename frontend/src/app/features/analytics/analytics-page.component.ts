@@ -5,6 +5,7 @@ import { QueryStateService } from "../../core/state/query-state.service";
 import { HistoricalComparisonComponent } from "./historical-comparison.component";
 import { StatisticsViewComponent } from "./statistics-view.component";
 import { ResourceStatusComponent } from "../../shared/status/resource-status.component";
+import { TemporalComparisonComponent } from "./temporal-comparison.component";
 
 @Component({
   selector: "app-analytics-page",
@@ -14,6 +15,7 @@ import { ResourceStatusComponent } from "../../shared/status/resource-status.com
     HistoricalComparisonComponent,
     StatisticsViewComponent,
     ResourceStatusComponent,
+    TemporalComparisonComponent,
   ],
   templateUrl: "./analytics-page.component.html",
   styleUrl: "./analytics-page.component.css",

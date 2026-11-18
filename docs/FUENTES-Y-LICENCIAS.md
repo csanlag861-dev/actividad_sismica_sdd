@@ -32,3 +32,12 @@
 Los eventos del archivo `terremotos-demo.geojson` son ficticios y están marcados como demostración. No utilizarlos para extraer conclusiones sobre sismicidad real.
 
 El código de apoyo original de este paquete se ofrece para uso, modificación y distribución educativa sin restricciones adicionales. Las dependencias conservan sus propias licencias.
+
+## Dependencias de exploración avanzada (spec 007)
+
+- MapLibre GL JS (BSD-3-Clause): https://github.com/maplibre/maplibre-gl-js
+- deck.gl, incluidos sus paquetes de capas y adaptación a MapLibre (MIT): https://github.com/visgl/deck.gl
+- CesiumJS (Apache-2.0): https://github.com/CesiumGS/cesium
+- El mapa 2D y el globo 3D usan teselas de OpenStreetMap. La atribución aparece en las vistas y se conserva la política de uso indicada arriba; no se incluyen ni precargan tiles.
+- La vista Cesium usa el elipsoide local, conserva los créditos del proveedor y no configura Cesium ion ni incorpora tokens.
+- Las referencias a Leaflet y ngx-leaflet de la sección original describen el material de demostración de la asignatura; la implementación avanzada usa MapLibre como mapa 2D principal.

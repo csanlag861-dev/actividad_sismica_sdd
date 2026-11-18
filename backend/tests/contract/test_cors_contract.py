@@ -38,9 +38,20 @@ async def test_cors_preflight_and_get_allow_production_and_development_origins(a
                 "Access-Control-Request-Headers": "ngrok-skip-browser-warning",
             },
         )
+        post_preflight = await client.options(
+            "/api/comparaciones",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
         get_response = await client.get("/api/eventos", headers={"Origin": origin})
 
         assert preflight.status_code == 200
+        assert post_preflight.status_code == 200
+        assert "POST" in post_preflight.headers["access-control-allow-methods"]
+        assert "content-type" in post_preflight.headers["access-control-allow-headers"]
         assert preflight.headers["access-control-allow-origin"] == origin
         assert "ngrok-skip-browser-warning" in preflight.headers["access-control-allow-headers"]
         assert get_response.status_code == 200

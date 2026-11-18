@@ -1,10 +1,11 @@
 <!--
 Sync Impact Report
-Version change: scaffold sin versión → 1.0.0 (constitución inicial)
-Modified principles: scaffold sin principios definidos → cinco principios establecidos
-Added sections: Restricciones del proyecto; Flujo de desarrollo y revisión
-Removed sections: ninguna
-Follow-up TODOs: confirmar la fecha original de ratificación.
+Version change: 1.0.0 → 1.1.0
+Modified sections: Restricciones del proyecto (bibliotecas cartográficas del frontend)
+Reason: Alinear la restricción anterior de Leaflet con la decisión aprobada para el mapa 2D (MapLibre GL JS), el complemento opcional deck.gl y la vista de globo 3D especializada con CesiumJS.
+Affected documents: specs/007-exploracion-sismica-avanzada/spec.md; specs/007-exploracion-sismica-avanzada/plan.md; docs/README.md; docs/VALIDACION.md; docs/FUENTES-Y-LICENCIAS.md; docs/CONTRATO-API.md; frontend/angular.json; frontend/package.json. The Leaflet references in docs/ENUNCIADO.md and docs/FAQ-ALUMNADO.md remain unchanged and the approved feature-specific deviation is recorded in plan.md.
+Required evidence: build y pruebas del frontend; contratos y pruebas de paginación/comparación; prueba de despliegue de recursos estáticos, atribución cartográfica y limpieza de las vistas WebGL.
+Follow-up TODOs: ninguna.
 -->
 
 # Observatorio de actividad sísmica Constitution
@@ -64,8 +65,11 @@ conclusiones engañosas y hace verificable el análisis.
 
 - Productor, Kafka, consumidor, PostgreSQL y API FastAPI DEBEN ejecutarse
   como cinco servicios separados en Docker Compose. El frontend es Angular
-  con Leaflet y se publica como SPA; el acceso HTTPS público a la API sigue
-  el mecanismo indicado en el enunciado.
+  y se publica como SPA; MapLibre GL JS es la biblioteca cartográfica 2D
+  principal. deck.gl es un complemento opcional para visualizaciones
+  geoespaciales avanzadas y CesiumJS se reserva para la experiencia de globo
+  3D especializada. El acceso HTTPS público a la API sigue el mecanismo
+  indicado en el enunciado.
 - La recogida reciente y la carga histórica DEBEN conservar sus diferencias
   de frecuencia y procedencia. La desaparición de un evento de un feed móvil
   no es motivo suficiente para borrarlo del almacenamiento histórico.
@@ -106,4 +110,4 @@ revisión de una entrega o cambio DEBE verificar el cumplimiento de los
 principios, los contratos, los controles de calidad y las evidencias
 aplicables; las excepciones deben quedar justificadas y documentadas.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): confirmar la fecha original de aprobación | **Last Amended**: 2026-11-11
+**Version**: 1.1.0 | **Ratified**: TODO(RATIFICATION_DATE): confirmar la fecha original de aprobación | **Last Amended**: 2026-11-18

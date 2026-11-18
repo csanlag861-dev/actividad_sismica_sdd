@@ -59,9 +59,9 @@ describe("QueryStateService", () => {
   beforeEach(() => {
     api = jasmine.createSpyObj<ObservatoryApiService>(
       "ObservatoryApiService",
-      ["fetchEvents", "fetchStatistics", "fetchHealth", "getError"],
+      ["fetchEvents", "fetchAllEvents", "fetchStatistics", "fetchHealth", "getError"],
     );
-    api.fetchEvents.and.resolveTo(events("event"));
+    api.fetchAllEvents.and.resolveTo(events("event"));
     api.fetchStatistics.and.resolveTo(statistics());
     api.fetchHealth.and.resolveTo(health());
     api.getError.and.callFake((error: unknown) => ({
@@ -82,7 +82,7 @@ describe("QueryStateService", () => {
   it("uses the same default filters and updates each resource independently", async () => {
     await service.refresh();
 
-    expect(api.fetchEvents).toHaveBeenCalledOnceWith({});
+    expect(api.fetchAllEvents).toHaveBeenCalledOnceWith({});
     expect(api.fetchStatistics).toHaveBeenCalledOnceWith({});
     expect(api.fetchHealth).toHaveBeenCalledTimes(1);
     expect(service.state().events.status).toBe("success");
@@ -108,7 +108,7 @@ describe("QueryStateService", () => {
     const oldResponse = new Promise<EventCollection>((resolve) => {
       resolveOld = resolve;
     });
-    api.fetchEvents.and.returnValues(oldResponse, Promise.resolve(events("new")));
+    api.fetchAllEvents.and.returnValues(oldResponse, Promise.resolve(events("new")));
 
     const firstQuery = service.refresh();
     service.filters.set({ min_mag: 4 });
@@ -121,7 +121,7 @@ describe("QueryStateService", () => {
   });
 
   it("retains a successful snapshot after a partial refresh failure", async () => {
-    api.fetchEvents.and.returnValues(
+    api.fetchAllEvents.and.returnValues(
       Promise.resolve(events("last-good")),
       Promise.reject(new Error("backend unavailable")),
       Promise.resolve(events("recovered")),
@@ -148,7 +148,7 @@ describe("QueryStateService", () => {
     const newRequest = new Promise<EventCollection>((_resolve, reject) => {
       rejectNewRequest = reject;
     });
-    api.fetchEvents.and.returnValues(Promise.resolve(events("last-good")), newRequest);
+    api.fetchAllEvents.and.returnValues(Promise.resolve(events("last-good")), newRequest);
     service.filters.set({
       start: "2025-01-01T00:00:00.000Z",
       end: "2025-01-02T00:00:00.000Z",
@@ -193,11 +193,11 @@ describe("QueryStateService", () => {
   it("debounces filter updates before refreshing the shared query", fakeAsync(() => {
     service.setFilters({ min_mag: 3.5 });
     tick(299);
-    expect(api.fetchEvents).not.toHaveBeenCalled();
+    expect(api.fetchAllEvents).not.toHaveBeenCalled();
     tick(1);
     flushMicrotasks();
 
-    expect(api.fetchEvents).toHaveBeenCalledOnceWith({ min_mag: 3.5 });
+    expect(api.fetchAllEvents).toHaveBeenCalledOnceWith({ min_mag: 3.5 });
     expect(api.fetchStatistics).toHaveBeenCalledOnceWith({ min_mag: 3.5 });
     expect(api.fetchHealth).not.toHaveBeenCalled();
   }));

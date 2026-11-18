@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { By } from "@angular/platform-browser";
 import { provideRouter } from "@angular/router";
 import { EventCollection, EventFeature, StatisticsResponse } from "../../core/models/api.models";
+import { ObservatoryApiService } from "../../core/api/observatory-api.service";
 import { QueryStateService } from "../../core/state/query-state.service";
 import { QueryState } from "../../core/models/ui-state.models";
 import { EventMapComponent } from "../../shared/map/event-map.component";
@@ -11,6 +12,7 @@ import { DashboardPageComponent } from "./dashboard-page.component";
 describe("DashboardPageComponent", () => {
   let fixture: ComponentFixture<DashboardPageComponent>;
   let queryState: ReturnType<typeof createQueryState>;
+  let eventApi: jasmine.SpyObj<ObservatoryApiService>;
 
   function makeEvent(
     id: string,
@@ -120,11 +122,25 @@ describe("DashboardPageComponent", () => {
 
   beforeEach(async () => {
     queryState = createQueryState();
+    eventApi = jasmine.createSpyObj<ObservatoryApiService>("ObservatoryApiService", ["fetchEvents", "getError"]);
+    eventApi.fetchEvents.and.callFake(async () => {
+      const collection = queryState.state().events.data!;
+      return {
+        ...collection,
+        features: [...new Map(collection.features.map((event) => [event.id, event])).values()],
+      };
+    });
+    eventApi.getError.and.callFake((error: unknown) => ({
+      kind: "http",
+      message: error instanceof Error ? error.message : "Error HTTP",
+      status: 503,
+    }));
     await TestBed.configureTestingModule({
       imports: [DashboardPageComponent],
       providers: [
         provideRouter([]),
         { provide: QueryStateService, useValue: queryState },
+        { provide: ObservatoryApiService, useValue: eventApi },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(DashboardPageComponent);
@@ -159,7 +175,7 @@ describe("DashboardPageComponent", () => {
     expect(text).not.toContain("Servicio disponible");
   });
 
-  it("maps each unique valid event once and keeps the accessible event table selectable", () => {
+  it("maps each unique valid event once and keeps the accessible event table selectable", async () => {
     const first = makeEvent("event-1", [1, 2]);
     const duplicate = makeEvent("event-1", [3, 4], "Duplicate");
     const invalid = makeEvent("invalid-coordinate", [1, 91]);
@@ -175,6 +191,8 @@ describe("DashboardPageComponent", () => {
       },
     }));
 
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
 
     const map = fixture.debugElement.query(By.directive(EventMapComponent))

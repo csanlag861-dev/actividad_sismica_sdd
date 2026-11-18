@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncGenerator
 from datetime import datetime, timezone
 
@@ -11,14 +12,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from observatorio.api import readiness
 from observatorio.api.bootstrap import REQUIRED_TABLES, expected_revision
-from observatorio.api.queries import latest_successful_live_ingestion, query_current_events
+from observatorio.api.queries import latest_successful_live_ingestion, query_current_event_page, query_current_events
 from observatorio.api.schemas import (
     ApiError,
+    ComparisonRequest,
+    EventPageRequest,
     QueryFilters,
     epoch_milliseconds,
+    parse_event_page_request,
+    parse_comparison_request,
     parse_query_filters,
 )
-from observatorio.api.statistics import get_statistics
+from observatorio.api.statistics import build_comparison_group, build_pairwise_differences, get_statistics
 from observatorio.db.session import session_factory
 from observatorio.logging import get_logger
 from observatorio.models import Country
@@ -48,6 +53,22 @@ async def query_filters(
     return filters
 
 
+async def event_page_request(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+) -> EventPageRequest:
+    page_request = parse_event_page_request(request.scope.get("query_string", b""))
+    country_id = page_request.filters.country_id
+    if country_id is not None and await session.get(Country, country_id) is None:
+        raise ApiError(
+            422,
+            "invalid_request",
+            "Request parameters are invalid",
+            [{"parameter": "country_id", "reason": "is not present in the country catalog"}],
+        )
+    return page_request
+
+
 def _unavailable() -> JSONResponse:
     return JSONResponse(
         status_code=503,
@@ -66,7 +87,7 @@ async def _schema_is_ready(session: AsyncSession) -> bool:
 
 @router.get("/eventos")
 async def get_events(
-    filters: QueryFilters = Depends(query_filters),
+    page: EventPageRequest = Depends(event_page_request),
     session: AsyncSession = Depends(get_db_session),
 ) -> dict:
     if not readiness.is_ready():
@@ -75,7 +96,12 @@ async def get_events(
             "dependency_unavailable",
             "A required service is unavailable",
         )
-    rows = await query_current_events(session, filters)
+    rows, total_count = await query_current_event_page(
+        session,
+        page.filters,
+        limit=page.limit,
+        offset=page.offset,
+    )
     last_ingestion = await latest_successful_live_ingestion(session)
     generated = datetime.now(timezone.utc)
     features = []
@@ -113,7 +139,10 @@ async def get_events(
             "last_ingestion": epoch_milliseconds(last_ingestion),
             "mode": "live",
             "count": len(features),
-            "truncated": False,
+            "total_count": total_count,
+            "offset": page.offset,
+            "limit": page.limit,
+            "truncated": page.offset > 0 or len(features) < total_count,
         },
         "features": features,
     }
@@ -146,3 +175,78 @@ async def get_event_statistics(
             "A required service is unavailable",
         )
     return await get_statistics(session, filters)
+
+
+@router.post("/comparaciones")
+async def post_temporal_comparison(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    try:
+        body = json.loads(await request.body())
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise ApiError(400, "malformed_request", "Request syntax is malformed") from None
+    comparison: ComparisonRequest = parse_comparison_request(body)
+    if not readiness.is_ready():
+        raise ApiError(
+            503,
+            "dependency_unavailable",
+            "A required service is unavailable",
+        )
+
+    results = []
+    for index, group in enumerate(comparison.groups):
+        try:
+            if group.population.country_id is not None:
+                country = await session.get(Country, group.population.country_id)
+                if country is None:
+                    raise ApiError(
+                        422,
+                        "invalid_request",
+                        "Request parameters are invalid",
+                        [{
+                            "parameter": f"groups[{index}].population.country_id",
+                            "reason": "is not present in the country catalog",
+                        }],
+                    )
+            results.append(
+                await build_comparison_group(
+                    session,
+                    group,
+                    mode=comparison.mode,
+                    min_magnitude=comparison.min_mag,
+                )
+            )
+        except ApiError:
+            raise
+        except SQLAlchemyError as exc:
+            logger.warning(
+                "Temporal comparison group query failed at index %s: %s",
+                index,
+                type(exc).__name__,
+            )
+            raise ApiError(
+                503,
+                "dependency_unavailable",
+                "A required service is unavailable",
+                [{"parameter": f"groups[{index}]", "reason": "dependency_unavailable"}],
+            ) from None
+        except Exception as exc:
+            logger.error(
+                "Temporal comparison group query failed at index %s: %s",
+                index,
+                type(exc).__name__,
+            )
+            raise ApiError(
+                500,
+                "internal_error",
+                "The request could not be completed",
+                [{"parameter": f"groups[{index}]", "reason": "query_failed"}],
+            ) from None
+
+    return {
+        "mode": comparison.mode,
+        "filters": {"min_mag": comparison.min_mag},
+        "groups": results,
+        "pairwise_differences": build_pairwise_differences(results),
+    }

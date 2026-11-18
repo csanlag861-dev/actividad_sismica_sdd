@@ -4,15 +4,28 @@
       <span class="label">ALTERNATIVA AL MAPA</span>
       <h2 id="events-table-title">Eventos consultados</h2>
     </div>
-    @if (events; as collection) {
-      <span class="table-count">{{ collection.features.length }} filas</span>
-    }
+    <span class="table-count">{{ totalCount }} resultados</span>
   </div>
 
-  @if (events?.metadata?.truncated) {
-    <p class="truncated-note" role="status">La respuesta está truncada; esta tabla muestra solo los eventos recibidos y no representa un total global.</p>
-  }
-  @if (events?.features?.length) {
+  <div class="pagination-controls" aria-label="Paginación de eventos">
+    <label for="event-page-size">Filas por página</label>
+    <select id="event-page-size" [value]="pageSize" (change)="changePageSize($any($event.target).value)">
+      @for (size of pageSizes; track size) {
+        <option [value]="size">{{ size }}</option>
+      }
+    </select>
+    <span aria-live="polite">
+      @if (totalCount) { {{ firstResult }}–{{ lastResult }} de {{ totalCount }} · Página {{ currentPage }} de {{ totalPages }} }
+      @else { 0 resultados }
+    </span>
+    <button type="button" (click)="previousPage()" [disabled]="loading || offset === 0" aria-label="Página anterior">Anterior</button>
+    <button type="button" (click)="nextPage()" [disabled]="loading || offset + pageSize >= totalCount" aria-label="Página siguiente">Siguiente</button>
+  </div>
+  @if (loading) {
+    <p class="empty-message" role="status">Cargando eventos…</p>
+  } @else if (errorMessage) {
+    <p class="empty-message status-error" role="alert">No se pudo cargar la página: {{ errorMessage }}</p>
+  } @else if (events?.features?.length) {
     <div class="table-scroll">
       <table>
         <caption>Eventos sísmicos devueltos por la API para la consulta actual</caption>
@@ -29,7 +42,7 @@
           @for (event of events?.features ?? []; track event.id) {
             <tr [class.selected]="event.id === selectedId">
               <td>
-                <button type="button" (click)="eventSelected.emit(event.id)">
+                <button type="button" (click)="selectEvent(event)">
                   {{ event.properties.place ?? "Ubicación desconocida" }}
                   <small>{{ event.id }}</small>
                 </button>
@@ -46,6 +59,6 @@
   } @else if (events) {
     <p class="empty-message">La consulta se completó correctamente y no devolvió eventos para estos criterios.</p>
   } @else {
-    <p class="empty-message">No hay una colección de eventos disponible.</p>
+    <p class="empty-message" role="status">Preparando la consulta de eventos…</p>
   }
 </section>

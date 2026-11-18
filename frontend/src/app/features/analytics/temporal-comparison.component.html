@@ -1,0 +1,149 @@
+<section class="comparison-panel" aria-labelledby="temporal-comparison-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">COMPARADOR AVANZADO</p>
+      <h2 id="temporal-comparison-title">Comparar periodos y poblaciones</h2>
+      <p>Las diferencias son descriptivas y se calculan como segundo grupo menos primero.</p>
+    </div>
+  </div>
+
+  @if (catalogError) {
+    <p class="comparison-error" role="alert">{{ catalogError }} La población global y «Sin país asignado» siguen disponibles.</p>
+  }
+
+  <form (ngSubmit)="compare()">
+    <div class="shared-filters">
+      <label>
+        Conjunto de datos
+        <select name="mode" [(ngModel)]="mode">
+          <option value="live">Actual</option>
+          <option value="replay">Histórico</option>
+        </select>
+      </label>
+      <label>
+        Magnitud mínima compartida
+        <input type="number" step="any" name="minMag" [(ngModel)]="minimumMagnitude">
+      </label>
+    </div>
+
+    <div class="group-grid">
+      @for (group of groups; track $index; let index = $index) {
+        <fieldset class="group-form">
+          <legend>Grupo {{ index + 1 }}</legend>
+          <button type="button" class="remove-group" (click)="removeGroup(index)" [disabled]="groups.length <= 2" aria-label="Eliminar grupo {{ index + 1 }}">Eliminar</button>
+          <label>
+            Identificador
+            <input name="groupId{{ index }}" [(ngModel)]="group.id" required>
+          </label>
+          <label>
+            Nombre visible
+            <input name="groupLabel{{ index }}" [(ngModel)]="group.label" required>
+          </label>
+          <label>
+            Inicio UTC
+            <input type="datetime-local" name="groupStart{{ index }}" [(ngModel)]="group.start" required>
+          </label>
+          <label>
+            Fin UTC (exclusivo)
+            <input type="datetime-local" name="groupEnd{{ index }}" [(ngModel)]="group.end" required>
+          </label>
+          <label>
+            Población
+            <select name="population{{ index }}" [(ngModel)]="group.populationType">
+              <option value="all">Todos los eventos</option>
+              <option value="country">País</option>
+              <option value="unassigned">Sin país asignado</option>
+            </select>
+          </label>
+          @if (group.populationType === "country") {
+            <label>
+              País
+              <select name="country{{ index }}" [(ngModel)]="group.countryId" required>
+                <option value="">Selecciona un país</option>
+                @for (country of catalog.countries(); track country.id) {
+                  <option [value]="country.id">{{ country.name }}</option>
+                }
+              </select>
+            </label>
+          }
+        </fieldset>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button type="button" (click)="addGroup()" [disabled]="groups.length >= 5">Añadir grupo</button>
+      <button type="submit" [disabled]="loading">
+        @if (loading) { Comparando… } @else { Comparar }
+      </button>
+    </div>
+  </form>
+
+  @if (errorMessage) {
+    <p class="comparison-error" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (result; as comparison) {
+    <section class="comparison-results" aria-live="polite">
+      <h3>Resultados · {{ comparison.mode === "live" ? "datos actuales" : "datos históricos" }}</h3>
+      <p class="result-context">
+        Magnitud mínima: {{ comparison.filters.min_mag ?? "sin filtro" }}.
+        Tasas y distribuciones solo se muestran con cobertura completa.
+      </p>
+      <div class="result-grid">
+        @for (group of comparison.groups; track group.id) {
+          <article class="group-result">
+            <h4>{{ group.label }}</h4>
+            <p>{{ group.period.start | date: "medium" : "UTC" }} – {{ group.period.end | date: "medium" : "UTC" }} UTC</p>
+            <p>{{ group.population.country_name ?? "Todos los eventos" }} · {{ group.coverage.status }} ({{ group.coverage.covered_days }} / {{ group.coverage.period_days }} días)</p>
+            <dl>
+              <div><dt>Eventos observados</dt><dd>{{ group.observed_count }}</dd></div>
+              <div><dt>Tasa diaria</dt><dd>{{ group.daily_rate === null ? "No disponible" : (group.daily_rate | number: "1.0-6") }} @if (group.daily_rate === null) { · {{ metricReason(group, "daily_rate") }} }</dd></div>
+            </dl>
+            @for (metric of metricNames; track metric) {
+              <section class="distribution-result">
+                <h5>{{ metric === "magnitude" ? "Magnitud" : "Profundidad" }}</h5>
+                @if (group.distributions[metric]; as distribution) {
+                  <p>{{ distribution.valid_count }} valores válidos · {{ distribution.missing_count }} ausentes</p>
+                  @for (bucket of distribution.buckets; track bucket.min_inclusive) {
+                    <span>[{{ bucket.min_inclusive }}, {{ bucket.max_exclusive }}) · {{ bucket.count }} ({{ bucket.percentage ?? "—" }} %)</span>
+                  } @empty {
+                    <span>Sin intervalos observados</span>
+                  }
+                } @else {
+                  <p>No disponible: {{ metricReason(group, metric) }}</p>
+                }
+              </section>
+            }
+            @for (reason of group.unavailable_metrics | keyvalue; track reason.key) {
+              <p class="unavailable-reason">{{ reason.key }}: {{ reason.value }}</p>
+            }
+          </article>
+        }
+      </div>
+
+      <section class="pairwise-results">
+        <h4>Diferencias por pares (segundo menos primero)</h4>
+        @for (difference of comparison.pairwise_differences; track difference.first_group_id + difference.second_group_id) {
+          <article>
+            <h5>{{ difference.second_group_id }} − {{ difference.first_group_id }}</h5>
+            <p>Eventos observados: {{ difference.observed_count_difference ?? "No disponible" }}</p>
+            <p>Tasa diaria: {{ difference.daily_rate_difference ?? "No disponible" }}</p>
+            @for (metric of metricNames; track metric) {
+              <p>
+                {{ metric }}:
+                @if (difference.distribution_percentage_point_differences[metric]; as bins) {
+                  @for (bin of bins; track bin.min_inclusive) {
+                    [{{ bin.min_inclusive }}, {{ bin.max_exclusive }}): {{ bin.difference | number: "1.0-4" }} pp
+                  } @empty { Sin intervalos }
+                } @else { No disponible }
+              </p>
+            }
+            @for (reason of difference.unavailable_reasons | keyvalue; track reason.key) {
+              <p class="unavailable-reason">{{ reason.key }}: {{ reason.value }}</p>
+            }
+          </article>
+        }
+      </section>
+    </section>
+  }
+</section>

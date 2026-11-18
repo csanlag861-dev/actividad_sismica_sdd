@@ -224,6 +224,54 @@ async def test_start_is_inclusive_end_exclusive_and_minimum_magnitude_is_inclusi
 
 
 @pytest.mark.asyncio
+async def test_events_pagination_has_total_stable_order_and_true_truncation(api_context) -> None:
+    client, factory, _ = api_context
+    start = datetime(2026, 11, 17, tzinfo=timezone.utc)
+    for index in range(30):
+        await seed_api_event(
+            factory,
+            event_id=f"event-{index:02}",
+            event_time=start + timedelta(minutes=index // 2),
+        )
+
+    params = {"start": start.isoformat(), "end": (start + timedelta(days=1)).isoformat()}
+    first = await client.get("/api/eventos", params={**params, "limit": 25})
+    second = await client.get("/api/eventos", params={**params, "limit": 25, "offset": 25})
+    out_of_range = await client.get("/api/eventos", params={**params, "limit": 25, "offset": 30})
+
+    assert first.status_code == second.status_code == out_of_range.status_code == 200
+    first_body = first.json()
+    second_body = second.json()
+    assert first_body["metadata"]["total_count"] == 30
+    assert first_body["metadata"]["offset"] == 0
+    assert first_body["metadata"]["limit"] == 25
+    assert first_body["metadata"]["count"] == 25
+    assert first_body["metadata"]["truncated"] is True
+    assert second_body["metadata"]["count"] == 5
+    assert second_body["metadata"]["total_count"] == 30
+    assert second_body["metadata"]["truncated"] is True
+    assert [feature["id"] for feature in first_body["features"][:2]] == ["event-28", "event-29"]
+    assert [feature["id"] for feature in first_body["features"] + second_body["features"]] == [
+        f"event-{index:02}"
+        for pair in reversed(range(15))
+        for index in (pair * 2, pair * 2 + 1)
+    ]
+    assert out_of_range.json()["metadata"]["total_count"] == 30
+    assert out_of_range.json()["features"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("query", ["limit=24", "limit=25.0", "offset=-1", "offset=1.5"])
+async def test_events_reject_invalid_pagination_parameters(api_context, query: str) -> None:
+    client, _, _ = api_context
+
+    response = await client.get(f"/api/eventos?{query}")
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "invalid_request"
+
+
+@pytest.mark.asyncio
 async def test_storage_failure_is_not_an_empty_success(api_context) -> None:
     client, _, app = api_context
 

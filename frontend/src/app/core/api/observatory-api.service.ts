@@ -8,8 +8,11 @@ import {
 import {
   EventCollection,
   EventFilters,
+  EventPageOptions,
   HealthResponse,
   StatisticsResponse,
+  TemporalComparisonRequest,
+  TemporalComparisonResponse,
 } from "../models/api.models";
 import { AppConfigService } from "./app-config.service";
 
@@ -24,8 +27,40 @@ export class ObservatoryApiService {
     this.destroyRef.onDestroy(() => this.client.dispose());
   }
 
-  fetchEvents(filters: EventFilters = {}): Promise<EventCollection> {
-    return this.client.fetchEvents(filters);
+  fetchEvents(filters: EventFilters = {}, page: EventPageOptions = {}): Promise<EventCollection> {
+    return this.client.fetchEvents(filters, page);
+  }
+
+  async fetchAllEvents(filters: EventFilters = {}): Promise<EventCollection> {
+    const pageSize = 100;
+    const firstPage = await this.fetchEvents(filters, { limit: pageSize, offset: 0 });
+    const features = [...firstPage.features];
+    const totalCount = firstPage.metadata.total_count;
+    let offset = pageSize;
+    let lastPage = firstPage;
+
+    while (
+      totalCount !== undefined
+        ? features.length < totalCount
+        : lastPage.metadata.truncated
+    ) {
+      lastPage = await this.fetchEvents(filters, { limit: pageSize, offset });
+      if (!lastPage.features.length) break;
+      features.push(...lastPage.features);
+      offset += pageSize;
+    }
+
+    return {
+      ...firstPage,
+      metadata: {
+        ...firstPage.metadata,
+        count: features.length,
+        truncated: totalCount === undefined
+          ? lastPage.metadata.truncated
+          : features.length < totalCount,
+      },
+      features,
+    };
   }
 
   fetchStatistics(filters: EventFilters = {}): Promise<StatisticsResponse> {
@@ -34,6 +69,10 @@ export class ObservatoryApiService {
 
   fetchHealth(): Promise<HealthResponse> {
     return this.client.fetchHealth();
+  }
+
+  fetchComparison(request: TemporalComparisonRequest): Promise<TemporalComparisonResponse> {
+    return this.client.fetchComparison(request);
   }
 
   getError(error: unknown): { kind: "http" | "transport"; message: string; status?: number } {

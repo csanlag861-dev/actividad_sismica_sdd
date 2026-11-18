@@ -1,7 +1,7 @@
-import { Component, inject } from "@angular/core";
+import { Component, inject, signal } from "@angular/core";
 import { DatePipe } from "@angular/common";
 import { RouterLink } from "@angular/router";
-import { EventCollection, EventFeature } from "../../core/models/api.models";
+import { EventCollection, EventFeature, EventFilters } from "../../core/models/api.models";
 import { QueryStateService } from "../../core/state/query-state.service";
 import { EventDetailComponent } from "../events/event-detail.component";
 import { EventsTableComponent } from "../events/events-table.component";
@@ -28,6 +28,7 @@ import { DistributionSummaryComponent } from "./distribution-summary.component";
 })
 export class DashboardPageComponent {
   readonly queries = inject(QueryStateService);
+  private readonly tableSelectedEvent = signal<EventFeature | null>(null);
   selectedId: string | null = null;
 
   get eventSnapshot() {
@@ -47,11 +48,6 @@ export class DashboardPageComponent {
     });
   }
 
-  get displayedCollection(): EventCollection | null {
-    const collection = this.eventSnapshot.data;
-    return collection ? { ...collection, features: this.displayedEvents } : null;
-  }
-
   get mapEvents(): EventCollection | null {
     const collection = this.eventSnapshot.data;
     if (!collection) return null;
@@ -62,7 +58,13 @@ export class DashboardPageComponent {
   }
 
   get selectedEvent(): EventFeature | null {
+    const tableEvent = this.tableSelectedEvent();
+    if (tableEvent?.id === this.selectedId) return tableEvent;
     return this.displayedEvents.find((event) => event.id === this.selectedId) ?? null;
+  }
+
+  get tableFilters(): EventFilters {
+    return this.eventSnapshot.filters ?? this.queries.filters();
   }
 
   get eventPeriodLabel(): string {
@@ -91,8 +93,10 @@ export class DashboardPageComponent {
     ].join(" · ");
   }
 
-  selectEvent(id: string): void {
+  selectEvent(event: string | EventFeature): void {
+    const id = typeof event === "string" ? event : event.id;
     this.selectedId = id;
+    this.tableSelectedEvent.set(typeof event === "string" ? null : event);
   }
 
   private formatUtc(value: string): string {

@@ -1,0 +1,41 @@
+# Research: Exploración sísmica avanzada
+
+**Date**: 2026-11-18
+
+## Decisions
+
+### MapLibre GL JS is the primary 2D map
+
+- **Decision**: Replace Leaflet with the npm ESM package for Angular's browser build. Render events and local country boundaries from GeoJSON sources and MapLibre layers. Keep the current OSM tile provider as an attributed raster source to avoid introducing a map-service credential or a new provider dependency. Preserve the table as the accessible alternative for event discovery and selection.
+- **Rationale**: MapLibre is the requested library, supports GeoJSON sources/layers and feature interaction, and has an official ESM/esbuild setup. The current Angular application uses an esbuild-based application builder. MapLibre v6 is ESM-only and documents an explicit worker URL for esbuild; the Angular asset configuration must copy the worker and test the resulting URL. Retain the attribution control and the attribution required by the tile source.
+- **Alternatives considered**: Leaflet was the existing implementation but is replaced by explicit user direction. A MapLibre CDN import was rejected in favor of a lockfile-managed npm dependency. A new vector-tile service was rejected because it adds provider/credential and attribution concerns outside the request.
+- **Interaction/performance**: Use stable event feature IDs, layer-scoped click handling, and feature state for selection/latest-event emphasis. Replace source data rather than accumulating layers on refresh. Use clustering only if representative data-volume tests show it is needed.
+- **Sources**: [MapLibre GL JS installation and ESM](https://maplibre.org/maplibre-gl-js/docs/); [GeoJSON source API](https://maplibre.org/maplibre-gl-js/docs/API/classes/GeoJSONSource/); [MapLibre Style Specification: sources](https://maplibre.org/maplibre-style-spec/sources/); [attribution control](https://maplibre.org/maplibre-gl-js/docs/API/classes/AttributionControl/).
+
+### deck.gl is optional and lazy-loaded
+
+- **Decision**: Use `@deck.gl/maplibre` only for an explicitly selected advanced visualization. Default to the separate-canvas overlay mode; use interleaved mode only if a concrete visualization needs to draw among basemap layers. Lazy-load the feature so its code is not part of the summary's initial path.
+- **Rationale**: The default overlaid mode is documented as the more robust option and preserves MapLibre's own controls and interaction. Interleaving requires WebGL2 and shared rendering context; it is unnecessary for the baseline 2D map. The documentation provides a MapLibre integration and recommends releasing the overlay on teardown.
+- **Alternatives considered**: Interleaving by default was rejected because advanced visualization has no current layer-order requirement and it couples renderer lifecycles. Reverse-controlled rendering was rejected because it impedes base-map interaction. Omitting deck.gl remains a valid configuration if no advanced visualization is needed.
+- **Sources**: [deck.gl with MapLibre](https://deck.gl/docs/developer-guide/base-maps/using-with-maplibre); [MapLibreOverlay API](https://deck.gl/docs/api-reference/maplibre/overview); [renderer modes](https://deck.gl/docs/get-started/using-with-map); [Angular lazy route loading](https://angular.dev/guide/routing/loading-strategies); [Angular component lifecycle](https://angular.dev/guide/components/lifecycle).
+
+### CesiumJS is isolated to the specialized 3D globe
+
+- **Decision**: Put the globe behind a lazy Angular route/component and dynamically import CesiumJS only in the browser after the host element exists. Copy Cesium's `Workers`, `ThirdParty`, `Assets`, and `Widgets` directories into the SPA output; set `CESIUM_BASE_URL` before import; destroy the Viewer when its component is destroyed. Keep the Cesium credit display visible and use imagery with documented attribution. Do not require a Cesium ion token for the initial implementation.
+- **Rationale**: Cesium's documented npm setup depends on separately served static files and a base URL. Lazy loading isolates the large renderer from normal dashboard use. Globe imagery and terrain have independent provider terms; the engine's open-source license does not grant rights to the data. A surface point plus a depth-coded legend/indicator communicates depth without claiming visibility of a hypocenter hidden inside the globe or mapping focal depth to an unsupported ellipsoid altitude.
+- **Alternatives considered**: Loading Cesium in the initial bundle was rejected for payload and capability reasons. Requiring Cesium ion terrain/imagery was rejected because it adds a token and provider terms. Treating `-depth_km` as a height below sea level was rejected because seismic depth is relative to local ground and does not directly equal ellipsoid height.
+- **Sources**: [CesiumJS npm quickstart and static assets](https://cesium.com/learn/cesiumjs-learn/cesiumjs-quickstart/); [Viewer API](https://cesium.com/learn/cesiumjs/ref-doc/Viewer.html); [Entity API](https://cesium.com/learn/cesiumjs/ref-doc/Entity.html); [Cartesian3 API](https://cesium.com/learn/cesiumjs/ref-doc/Cartesian3.html); [Cesium credit display](https://cesium.com/learn/cesiumjs/ref-doc/CreditDisplay.html).
+
+### Server-side pagination and multi-group comparison
+
+- **Decision**: Extend the existing filtered `GET /api/eventos` with a bounded `limit` and `offset`; compute a filtered total separately and order by occurrence time descending then event ID ascending. Tables request their active page; maps request all pages in chunks of at most 100 and combine them, reporting any incomplete result. Preserve the existing collection and error conventions. Add `POST /api/comparaciones` with two to five group definitions and a shared `mode` (`live` or `replay`) and magnitude threshold. Each group contains its own period and country population selector. Share the existing half-open UTC period semantics, country catalog validation, and distribution bin rules.
+- **Rationale**: Current event queries materialize all matching rows and expose no pagination metadata; adding server-side paging prevents the table from becoming a local slice of an unbounded response. Newest-first ordering gives the separately bounded map collection a reliable latest event without requesting the entire result set. Current historical comparison is a single fixed 2025 baseline, so it cannot express the requested multi-period/multi-population operation. One mode per request avoids silently mixing live and replay datasets; per-group coverage prevents missing data from being presented as zero activity.
+- **Alternatives considered**: Client-only slicing was rejected because it downloads the full query before the user can navigate and cannot address response size. Repeated GET parameters for many groups were rejected in favor of a JSON request body. Replacing `GET /api/estadisticas` or its historical-comparison fields was rejected to preserve existing consumers.
+- **Sources**: [existing query API contract](../../004-api-consultas-estadisticas/contracts/query-api.md); [project API contract](../../../docs/CONTRATO-API.md); [query implementation](../../../backend/src/observatorio/api/queries.py); [statistics implementation](../../../backend/src/observatorio/api/statistics.py).
+
+## Resolved Technical Unknowns
+
+- **Browser and bundler integration**: Use Angular's browser-only lifecycle for WebGL creation, npm ESM packages, explicit worker/static-asset copying, and cleanup. Exercise the exact production build and deployed asset paths; the library documentation does not supply a complete Angular 20-specific recipe.
+- **Tiles and credentials**: Retain the current OSM source and existing local Natural Earth country geometry; preserve provider credit. Do not put tile, ion, or API credentials in `config.json`.
+- **Coverage**: Return a per-group status (`complete`, `partial`, or `unknown`) based on recorded successful ingestion coverage. Display observed event counts with the coverage label; only expose normalized rates and pairwise differences where the required coverage is complete.
+- **Depth semantics**: Keep event markers on the globe surface and encode numeric depth using a labelled legend/indicator and event detail. Do not place a point at `-depth` as though the value were ellipsoid height.

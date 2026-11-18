@@ -9,8 +9,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from observatorio.api.queries import EventRow, query_current_events
-from observatorio.api.schemas import QueryFilters, iso_utc
-from observatorio.models import IngestionInterval, IngestionRun
+from observatorio.api.schemas import ComparisonGroup, QueryFilters, iso_utc
+from observatorio.models import Country, IngestionInterval, IngestionRun
 
 BASELINE_START = datetime(2025, 1, 1, tzinfo=timezone.utc)
 BASELINE_END = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -141,6 +141,234 @@ def _historical_comparison(
         result["daily_rate_difference"] = result["current_daily_average"] - historical_average
         result["daily_rate_ratio"] = result["current_daily_average"] / historical_average
     return result
+
+
+def _covered_period(
+    intervals: Iterable[tuple[datetime, datetime, dict]],
+    *,
+    start: datetime,
+    end: datetime,
+    min_magnitude: float | None,
+) -> dict:
+    eligible = []
+    for interval_start, interval_end, source_filters in intervals:
+        if not isinstance(source_filters, dict) or "min_magnitude" not in source_filters:
+            continue
+        requested_magnitude = source_filters["min_magnitude"]
+        if requested_magnitude is not None and (
+            not isinstance(requested_magnitude, (int, float))
+            or not math.isfinite(requested_magnitude)
+            or min_magnitude is None
+            or requested_magnitude > min_magnitude
+        ):
+            continue
+        normalized_start = interval_start.replace(tzinfo=timezone.utc) if interval_start.tzinfo is None else interval_start.astimezone(timezone.utc)
+        normalized_end = interval_end.replace(tzinfo=timezone.utc) if interval_end.tzinfo is None else interval_end.astimezone(timezone.utc)
+        clipped_start = max(start, normalized_start)
+        clipped_end = min(end, normalized_end)
+        if clipped_start < clipped_end:
+            eligible.append((clipped_start, clipped_end))
+
+    covered_seconds = 0.0
+    covered_until = start
+    for interval_start, interval_end in sorted(eligible):
+        if interval_end <= covered_until:
+            continue
+        covered_seconds += (interval_end - max(interval_start, covered_until)).total_seconds()
+        covered_until = interval_end
+    period_seconds = (end - start).total_seconds()
+    covered_days = covered_seconds / 86400
+    period_days = period_seconds / 86400
+    complete = covered_seconds >= period_seconds - 1e-6
+    status = "complete" if complete else ("partial" if covered_seconds > 0 else "unknown")
+    return {
+        "status": status,
+        "covered_days": round(covered_days, 10),
+        "period_days": round(period_days, 10),
+    }
+
+
+async def build_comparison_group(
+    session: AsyncSession,
+    group: ComparisonGroup,
+    *,
+    mode: str,
+    min_magnitude: float | None,
+) -> dict:
+    filters = QueryFilters(
+        start=group.start,
+        end=group.end,
+        min_mag=min_magnitude,
+        country_id=group.population.country_id,
+    )
+    country_unassigned = group.population.type == "unassigned"
+    rows = await query_current_events(
+        session,
+        filters,
+        mode=mode,
+        country_unassigned=country_unassigned,
+    )
+    rows_without_magnitude_filter = rows if min_magnitude is None else await query_current_events(
+        session,
+        filters,
+        mode=mode,
+        include_magnitude_filter=False,
+        country_unassigned=country_unassigned,
+    )
+    intervals = (
+        await session.execute(
+            select(
+                IngestionInterval.interval_start,
+                IngestionInterval.interval_end,
+                IngestionInterval.filters,
+            )
+            .join(IngestionRun, IngestionRun.run_id == IngestionInterval.run_id)
+            .where(
+                IngestionRun.mode == mode,
+                IngestionRun.outcome == "succeeded",
+                IngestionInterval.status == "complete",
+                IngestionInterval.interval_start < group.end,
+                IngestionInterval.interval_end > group.start,
+            )
+        )
+    ).all()
+    coverage = _covered_period(
+        ((start, end, source_filters) for start, end, source_filters in intervals),
+        start=group.start,
+        end=group.end,
+        min_magnitude=min_magnitude,
+    )
+
+    observed_count = len(rows)
+    unavailable_metrics: dict[str, str] = {}
+    daily_rate = observed_count / coverage["period_days"] if coverage["status"] == "complete" else None
+    if daily_rate is None:
+        unavailable_metrics["daily_rate"] = f"coverage_{coverage['status']}"
+
+    if coverage["status"] != "complete":
+        magnitude_distribution = None
+        depth_distribution = None
+        unavailable_metrics["magnitude"] = f"coverage_{coverage['status']}"
+        unavailable_metrics["depth_km"] = f"coverage_{coverage['status']}"
+    else:
+        magnitude_distribution = build_distribution(
+            rows,
+            field="magnitude",
+            width=0.5,
+            unit="magnitude",
+            missing_count=sum(row.magnitude is None for row in rows_without_magnitude_filter),
+        )
+        depth_distribution = build_distribution(
+            rows,
+            field="depth_km",
+            width=10,
+            unit="km",
+            missing_count=sum(row.depth_km is None for row in rows),
+        )
+        if magnitude_distribution["valid_count"] == 0:
+            magnitude_distribution = None
+            unavailable_metrics["magnitude"] = "no_valid_values"
+        if depth_distribution["valid_count"] == 0:
+            depth_distribution = None
+            unavailable_metrics["depth_km"] = "no_valid_values"
+
+    if group.population.type == "country":
+        country = await session.get(Country, group.population.country_id)
+        population = {
+            "type": "country",
+            "country_id": group.population.country_id,
+            "country_name": country.country_name if country else None,
+        }
+    elif group.population.type == "unassigned":
+        population = {
+            "type": "unassigned",
+            "country_id": None,
+            "country_name": "Sin país asignado",
+        }
+    else:
+        population = {"type": "all", "country_id": None, "country_name": "Todos"}
+
+    return {
+        "id": group.group_id,
+        "label": group.label,
+        "period": {"start": iso_utc(group.start), "end": iso_utc(group.end)},
+        "population": population,
+        "coverage": coverage,
+        "observed_count": observed_count,
+        "unavailable_metrics": unavailable_metrics,
+        "daily_rate": daily_rate,
+        "distributions": {
+            "magnitude": magnitude_distribution,
+            "depth_km": depth_distribution,
+        },
+    }
+
+
+def build_pairwise_differences(groups: list[dict]) -> list[dict]:
+    differences = []
+    for first_index, first in enumerate(groups):
+        for second in groups[first_index + 1:]:
+            unavailable: dict[str, str] = {}
+            complete = first["coverage"]["status"] == second["coverage"]["status"] == "complete"
+            count_difference = second["observed_count"] - first["observed_count"] if complete else None
+            if count_difference is None:
+                status = first["coverage"]["status"]
+                if status == "complete":
+                    status = second["coverage"]["status"]
+                unavailable["observed_count_difference"] = f"coverage_{status}"
+
+            rate_difference = None
+            if first["daily_rate"] is not None and second["daily_rate"] is not None:
+                rate_difference = second["daily_rate"] - first["daily_rate"]
+            else:
+                unavailable["daily_rate_difference"] = (
+                    first["unavailable_metrics"].get("daily_rate")
+                    or second["unavailable_metrics"].get("daily_rate")
+                    or "metric_unavailable"
+                )
+
+            percentage_differences: dict[str, list[dict] | None] = {}
+            for metric in ("magnitude", "depth_km"):
+                first_distribution = first["distributions"][metric]
+                second_distribution = second["distributions"][metric]
+                if first_distribution is None or second_distribution is None:
+                    percentage_differences[metric] = None
+                    unavailable[metric] = (
+                        first["unavailable_metrics"].get(metric)
+                        or second["unavailable_metrics"].get(metric)
+                        or "metric_unavailable"
+                    )
+                    continue
+                first_buckets = {
+                    (bucket["min_inclusive"], bucket["max_exclusive"]): bucket["percentage"]
+                    for bucket in first_distribution["buckets"]
+                }
+                second_buckets = {
+                    (bucket["min_inclusive"], bucket["max_exclusive"]): bucket["percentage"]
+                    for bucket in second_distribution["buckets"]
+                }
+                all_intervals = sorted(set(first_buckets) | set(second_buckets))
+                percentage_differences[metric] = [
+                    {
+                        "min_inclusive": lower,
+                        "max_exclusive": upper,
+                        "difference": second_buckets.get((lower, upper), 0)
+                        - first_buckets.get((lower, upper), 0),
+                    }
+                    for lower, upper in all_intervals
+                ]
+
+            differences.append(
+                {
+                    "first_group_id": first["id"],
+                    "second_group_id": second["id"],
+                    "observed_count_difference": count_difference,
+                    "daily_rate_difference": rate_difference,
+                    "unavailable_reasons": unavailable,
+                    "distribution_percentage_point_differences": percentage_differences,
+                }
+            )
+    return differences
 
 
 def build_statistics(

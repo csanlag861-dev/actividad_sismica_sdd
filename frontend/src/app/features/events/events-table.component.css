@@ -37,6 +37,39 @@
   font-size: 11px;
 }
 
+.pagination-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px 14px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.pagination-controls span {
+  flex: 1;
+  text-align: center;
+}
+
+.pagination-controls select,
+.pagination-controls button {
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.pagination-controls button:not(:disabled) {
+  cursor: pointer;
+}
+
+.pagination-controls button:disabled {
+  opacity: 0.55;
+}
+
 .table-scroll {
   overflow-x: auto;
 }
@@ -101,4 +134,8 @@ td small {
   border-top: 1px solid var(--color-border);
   color: var(--color-text-secondary);
   font-size: 12px;
+}
+
+.status-error {
+  color: var(--color-danger);
 }

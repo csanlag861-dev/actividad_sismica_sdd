@@ -12,8 +12,10 @@ Todos los endpoints comparten prefijo `/api`, JSON UTF-8 y fechas UTC. Los nombr
 | `end` | ISO 8601 con zona/offset | no | Excluido. Default: ahora UTC. |
 | `min_mag` | número finito | no | Magnitud mínima inclusiva; excluye magnitud null. |
 | `country_id` | código de país catalogado | no | Coincidencia exacta del identificador; país null no coincide. |
+| `limit` | entero | no | Tamaño de página: 25, 50 o 100; default 25. |
+| `offset` | entero no negativo | no | Posición base cero; default 0. |
 
-`start` debe preceder a `end`. Los filtros se combinan con AND. La consulta es solo de eventos `live` actuales, no de mensajes ni todas las versiones. No se fija límite en esta entrega. Parámetros desconocidos, malformados o con valores inválidos se rechazan; no se ignoran silenciosamente.
+`start` debe preceder a `end`. Los filtros se combinan con AND. La consulta es solo de eventos `live` actuales, no de mensajes ni todas las versiones. El orden es `event_time DESC, event_id ASC`. Parámetros desconocidos, malformados o con valores inválidos se rechazan; no se ignoran silenciosamente.
 
 ### `200 OK`
 
@@ -25,6 +27,9 @@ Todos los endpoints comparten prefijo `/api`, JSON UTF-8 y fechas UTC. Los nombr
     "last_ingestion": 1793113140000,
     "mode": "live",
     "count": 1,
+    "total_count": 1,
+    "offset": 0,
+    "limit": 25,
     "truncated": false
   },
   "features": [
@@ -52,6 +57,8 @@ Todos los endpoints comparten prefijo `/api`, JSON UTF-8 y fechas UTC. Los nombr
 - No matches returns `200` with `features: []`, `count: 0`.
 - `generated` is response generation time, not evidence that ingestion is running.
 - `last_ingestion` is latest successful live USGS request end time or null.
+- `count` is the response page size; `total_count` is the full filtered count before pagination. `truncated` is true exactly when the response omits matching events.
+- `/api/estadisticas` retains its existing filters and does not accept `limit` or `offset`.
 
 ## `GET /api/salud`
 

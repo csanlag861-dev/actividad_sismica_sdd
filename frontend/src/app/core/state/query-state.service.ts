@@ -78,7 +78,7 @@ export class QueryStateService {
     const requests = [
       this.loadResource(
         queryId,
-        () => this.api.fetchEvents(filters),
+        () => this.api.fetchAllEvents(filters),
         (current, data, readAt) => ({
           ...current,
           events: {

@@ -5,6 +5,11 @@ export interface EventFilters {
   country_id?: string;
 }
 
+export interface EventPageOptions {
+  limit?: 25 | 50 | 100;
+  offset?: number;
+}
+
 export interface EventFeature {
   type: "Feature";
   id: string;
@@ -44,6 +49,9 @@ export interface EventCollection {
     mode: string;
     count: number;
     truncated: boolean;
+    total_count?: number;
+    offset?: number;
+    limit?: number;
   };
   features: EventFeature[];
 }
@@ -94,6 +102,78 @@ export interface StatisticsResponse {
     daily_rate_ratio?: number;
     unit: string;
   };
+}
+
+export type ComparisonMode = "live" | "replay";
+
+export type ComparisonPopulation =
+  | { type: "all" }
+  | { type: "country"; country_id: string }
+  | { type: "unassigned" };
+
+export interface ComparisonGroupRequest {
+  id: string;
+  label: string;
+  period: Period;
+  population: ComparisonPopulation;
+}
+
+export interface TemporalComparisonRequest {
+  mode: ComparisonMode;
+  filters?: { min_mag?: number | null };
+  groups: ComparisonGroupRequest[];
+}
+
+export interface ComparisonPopulationResult {
+  type: "all" | "country" | "unassigned";
+  country_id: string | null;
+  country_name: string | null;
+}
+
+export interface ComparisonGroupResult {
+  id: string;
+  label: string;
+  period: Period;
+  population: ComparisonPopulationResult;
+  coverage: {
+    status: "complete" | "partial" | "unknown";
+    covered_days: number;
+    period_days: number;
+  };
+  observed_count: number;
+  unavailable_metrics: Record<string, string>;
+  daily_rate: number | null;
+  distributions: {
+    magnitude: Distribution | null;
+    depth_km: Distribution | null;
+  };
+}
+
+export interface ComparisonPairwiseDifference {
+  first_group_id: string;
+  second_group_id: string;
+  observed_count_difference: number | null;
+  daily_rate_difference: number | null;
+  unavailable_reasons: Record<string, string>;
+  distribution_percentage_point_differences: {
+    magnitude: Array<{
+      min_inclusive: number;
+      max_exclusive: number;
+      difference: number;
+    }> | null;
+    depth_km: Array<{
+      min_inclusive: number;
+      max_exclusive: number;
+      difference: number;
+    }> | null;
+  };
+}
+
+export interface TemporalComparisonResponse {
+  mode: ComparisonMode;
+  filters: { min_mag: number | null };
+  groups: ComparisonGroupResult[];
+  pairwise_differences: ComparisonPairwiseDifference[];
 }
 
 export interface Distribution {

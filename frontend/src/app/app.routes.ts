@@ -7,5 +7,11 @@ export const routes: Routes = [
   { path: "", component: DashboardPageComponent, title: "Resumen | Observatorio sísmico" },
   { path: "eventos", component: EventsPageComponent, title: "Exploración | Observatorio sísmico" },
   { path: "analisis", component: AnalyticsPageComponent, title: "Análisis | Observatorio sísmico" },
+  {
+    path: "globo-3d",
+    loadComponent: () => import("./features/globe-3d/globe-3d-page.component")
+      .then((module) => module.Globe3DPageComponent),
+    title: "Globo 3D | Observatorio sísmico",
+  },
   { path: "**", redirectTo: "" },
 ];

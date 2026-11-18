@@ -1,8 +1,29 @@
 <section class="map-frame" aria-label="Mapa de eventos sísmicos">
   <div #mapContainer class="map-canvas" role="application" aria-label="Mapa interactivo de eventos"></div>
+  <div class="map-actions">
+    <button type="button" (click)="toggleDensity()" [disabled]="deckLoading || !events?.features?.length" [attr.aria-pressed]="densityEnabled">
+      @if (deckLoading) { Cargando visualización… }
+      @else if (densityEnabled) { Desactivar vista hexagonal }
+      @else { Activar vista hexagonal }
+    </button>
+  </div>
+  <div class="map-status" aria-live="polite">
+    @if (events?.features?.length) {
+      @if (latestCount) {
+        <strong>Más reciente</strong>
+        <span>{{ latestCount }} evento(s) empatados en la fecha de ocurrencia más reciente</span>
+      } @else {
+        <strong>No se puede identificar el evento más reciente</strong>
+        <span>Ningún evento mostrado tiene un tiempo de ocurrencia válido.</span>
+      }
+    }
+    @if (isTruncated) {
+      <span>La respuesta de eventos está incompleta: se muestran {{ events?.features?.length }} de {{ totalCount }} eventos.</span>
+    }
+  </div>
   <div class="map-legend" aria-label="Leyenda de magnitud y profundidad">
     <strong>Tamaño del marcador</strong>
-    <span class="size-note">Radio de 4 + 2 × max(0, magnitud) px, limitado a 4–18 px; magnitud nula: 5 px y contorno discontinuo.</span>
+    <span class="size-note">Radio de 4 + 2 × max(0, magnitud) px, limitado a 4–18 px; magnitud desconocida: 5 px.</span>
     <strong>Profundidad</strong>
     @for (entry of depthLegend(maxDepth, hasNegativeDepth); track entry.label) {
       <span><i [style.backgroundColor]="entry.color" aria-hidden="true"></i>{{ entry.label }}</span>
@@ -10,5 +31,8 @@
   </div>
   @if (mapError) {
     <p class="map-error" role="alert">{{ mapError }}</p>
+  }
+  @if (deckError) {
+    <p class="map-error deck-error" role="alert">La vista avanzada no está disponible: {{ deckError }}</p>
   }
 </section>

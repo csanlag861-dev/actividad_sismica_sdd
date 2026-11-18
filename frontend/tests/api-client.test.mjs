@@ -133,6 +133,36 @@ test("accepts previous event collections without traceability", async () => {
     fetchImpl: async () => new Response(JSON.stringify(collection(7)), { status: 200 }),
   });
 
+  test("serializes validated page options and validates pagination metadata", async () => {
+    let requestUrl;
+    const page = {
+      ...collection(1),
+      metadata: {
+        ...collection(1).metadata,
+        count: 1,
+        total_count: 21,
+        offset: 20,
+        limit: 25,
+        truncated: true,
+      },
+    };
+    const client = createApiClient({
+      baseUrl: "https://api.example",
+      fetchImpl: async (url) => {
+        requestUrl = url;
+        return new Response(JSON.stringify(page), { status: 200 });
+      },
+    });
+
+    await client.fetchEvents({ country_id: "ESP" }, { limit: 25, offset: 20 });
+    assert.match(requestUrl, /country_id=ESP/);
+    assert.match(requestUrl, /limit=25/);
+    assert.match(requestUrl, /offset=20/);
+    await assert.rejects(client.fetchEvents({}, { limit: 24 }), TypeError);
+    await assert.rejects(client.fetchEvents({}, { offset: -1 }), TypeError);
+    client.dispose();
+  });
+
   const result = await client.fetchEvents();
 
   assert.equal(Object.hasOwn(result.features[0].properties, "traceability"), false);
@@ -257,6 +287,71 @@ test("sends only contract filters to statistics and accepts health 503 as unavai
   assert.deepEqual(health, { status: "unavailable", last_ingestion: null });
   assert.equal(client.getResourceState("health").error, null);
   client.dispose();
+});
+
+test("posts validated temporal comparison requests and validates responses", async () => {
+  let requestUrl;
+  let requestOptions;
+  const response = {
+    mode: "live",
+    filters: { min_mag: null },
+    groups: ["first", "second"].map((id) => ({
+      id,
+      label: id,
+      period: { start: "2025-01-01T00:00:00Z", end: "2025-01-02T00:00:00Z" },
+      population: { type: "all", country_id: null, country_name: "Todos" },
+      coverage: { status: "unknown", covered_days: 0, period_days: 1 },
+      observed_count: 0,
+      unavailable_metrics: {
+        daily_rate: "coverage_unknown",
+        magnitude: "coverage_unknown",
+        depth_km: "coverage_unknown",
+      },
+      daily_rate: null,
+      distributions: { magnitude: null, depth_km: null },
+    })),
+    pairwise_differences: [{
+      first_group_id: "first",
+      second_group_id: "second",
+      observed_count_difference: null,
+      daily_rate_difference: null,
+      unavailable_reasons: { daily_rate_difference: "coverage_unknown" },
+      distribution_percentage_point_differences: { magnitude: null, depth_km: null },
+    }],
+  };
+  const request = {
+    mode: "live",
+    filters: { min_mag: null },
+    groups: ["first", "second"].map((id) => ({
+      id,
+      label: id,
+      period: { start: "2025-01-01T00:00:00Z", end: "2025-01-02T00:00:00Z" },
+      population: { type: "all" },
+    })),
+  };
+  const client = createApiClient({
+    baseUrl: "https://api.example",
+    fetchImpl: async (url, options) => {
+      requestUrl = url;
+      requestOptions = options;
+      return new Response(JSON.stringify(response), { status: 200 });
+    },
+  });
+
+  assert.deepEqual(await client.fetchComparison(request), response);
+  assert.equal(requestUrl, "https://api.example/api/comparaciones");
+  assert.equal(requestOptions.method, "POST");
+  assert.equal(requestOptions.headers["Content-Type"], "application/json");
+  assert.deepEqual(JSON.parse(requestOptions.body), request);
+  await assert.rejects(client.fetchComparison({ ...request, groups: [] }), TypeError);
+  client.dispose();
+
+  const invalidResponseClient = createApiClient({
+    baseUrl: "https://api.example",
+    fetchImpl: async () => new Response(JSON.stringify({ ...response, groups: [] }), { status: 200 }),
+  });
+  await assert.rejects(invalidResponseClient.fetchComparison(request), ApiTransportError);
+  invalidResponseClient.dispose();
 });
 
 test("loads the public config and uses its API base URL without exposing secrets", async () => {

@@ -30,7 +30,13 @@ class EventRow:
     country_name: str | None
 
 
-def _event_statement(filters: QueryFilters, *, mode: str, include_magnitude_filter: bool = True):
+def _event_statement(
+    filters: QueryFilters,
+    *,
+    mode: str,
+    include_magnitude_filter: bool = True,
+    country_unassigned: bool = False,
+):
     statement = (
         select(EventVersion, Country.country_name)
         .join(
@@ -52,7 +58,9 @@ def _event_statement(filters: QueryFilters, *, mode: str, include_magnitude_filt
         statement = statement.where(EventVersion.magnitude >= filters.min_mag)
     if filters.country_id is not None:
         statement = statement.where(EventVersion.country_id == filters.country_id)
-    return statement.order_by(EventVersion.event_time, EventVersion.event_id)
+    elif country_unassigned:
+        statement = statement.where(EventVersion.country_id.is_(None))
+    return statement.order_by(EventVersion.event_time.desc(), EventVersion.event_id.asc())
 
 
 async def _rows(session: AsyncSession, statement) -> list[EventRow]:
@@ -85,11 +93,32 @@ async def query_current_events(
     *,
     mode: str = "live",
     include_magnitude_filter: bool = True,
+    country_unassigned: bool = False,
 ) -> list[EventRow]:
     return await _rows(
         session,
-        _event_statement(filters, mode=mode, include_magnitude_filter=include_magnitude_filter),
+        _event_statement(
+            filters,
+            mode=mode,
+            include_magnitude_filter=include_magnitude_filter,
+            country_unassigned=country_unassigned,
+        ),
     )
+
+
+async def query_current_event_page(
+    session: AsyncSession,
+    filters: QueryFilters,
+    *,
+    limit: int,
+    offset: int,
+    mode: str = "live",
+) -> tuple[list[EventRow], int]:
+    statement = _event_statement(filters, mode=mode)
+    count_statement = select(func.count()).select_from(statement.order_by(None).subquery())
+    total_count = int(await session.scalar(count_statement) or 0)
+    rows = await _rows(session, statement.limit(limit).offset(offset))
+    return rows, total_count
 
 
 async def latest_successful_live_ingestion(session: AsyncSession) -> datetime | None:

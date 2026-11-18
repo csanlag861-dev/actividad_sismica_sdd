@@ -1,0 +1,53 @@
+<section class="globe-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">EXPLORADOR / GLOBO 3D</p>
+      <h1>Eventos sísmicos sobre el globo</h1>
+      <p class="lede">Los marcadores permanecen en la superficie. La profundidad se codifica visualmente y se consulta en la ficha, sin representar posiciones subterráneas.</p>
+    </div>
+    <a routerLink="/eventos">Volver a exploración 2D</a>
+  </header>
+
+  <app-event-filters />
+
+  @if (viewerError) {
+    <section class="globe-error" role="alert">
+      <h2>El globo 3D no está disponible</h2>
+      <p>{{ viewerError }}</p>
+      <button type="button" (click)="retry()">Reintentar</button>
+      <a routerLink="/eventos">Continuar en el mapa y la tabla de eventos</a>
+    </section>
+  } @else {
+    <div class="globe-grid">
+      <div class="globe-column">
+        <div #globeContainer class="globe-canvas" role="application" aria-label="Globo 3D interactivo con eventos sísmicos"></div>
+        <div class="globe-legend" aria-label="Leyenda de profundidad">
+          <strong>Escala de profundidad (marcadores en superficie)</strong>
+          @for (entry of depthLegend(maxDepth); track entry.label) {
+            <span><i [style.backgroundColor]="entry.color" aria-hidden="true"></i>{{ entry.label }}</span>
+          }
+          <span><i class="latest-marker" aria-hidden="true"></i>Último evento</span>
+        </div>
+        <p class="attribution">Mapa base © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>. Globo y controles © CesiumJS.</p>
+        @if (isTruncated) {
+          <p class="globe-note" role="status">La respuesta de eventos está incompleta: se muestran {{ events?.features?.length }} de {{ totalCount }} eventos.</p>
+        }
+        @if (invalidLocationCount > 0) {
+          <p class="globe-note" role="status">{{ invalidLocationCount }} de {{ events?.features?.length }} eventos consultados se excluyeron del globo por tener coordenadas inválidas.</p>
+        }
+      </div>
+      <app-event-detail [event]="selectedEvent" />
+    </div>
+  }
+
+  @if (eventStatus === "loading") {
+    <p role="status">Cargando eventos para el globo…</p>
+  } @else if (eventStatus === "error") {
+    <p class="globe-error" role="alert">No se pudieron cargar los eventos: {{ eventError }}</p>
+    @if (events) {
+      <p class="globe-note" role="status">El globo conserva la última consulta correcta; los eventos mostrados pueden estar desactualizados.</p>
+    }
+  } @else if (events?.features?.length === 0) {
+    <p role="status">La consulta se completó correctamente y no devolvió eventos.</p>
+  }
+</section>

@@ -5,12 +5,13 @@ import {
   depthLegend,
   eventCoordinates,
   hasValidEventCoordinates,
+  latestEventIds,
   markerRadius,
 } from "./event-map.utils";
 import { EventFeature } from "../../core/models/api.models";
 
 describe("event-map utilities", () => {
-  it("uses Leaflet latitude/longitude order from GeoJSON longitude/latitude", () => {
+  it("keeps GeoJSON longitude/latitude coordinates in map order", () => {
     const event: EventFeature = {
       type: "Feature",
       id: "event-1",
@@ -70,5 +71,31 @@ describe("event-map utilities", () => {
     expect(markerRadius(0)).toBe(4);
     expect(markerRadius(1)).toBeLessThan(markerRadius(5));
     expect(markerRadius(100)).toBe(18);
+  });
+
+  it("highlights all valid events tied at the latest occurrence time", () => {
+    const event = (id: string, time: number, coordinates: [number, number] = [1, 2]): EventFeature => ({
+      type: "Feature",
+      id,
+      geometry: { type: "Point", coordinates },
+      properties: {
+        mag: 2,
+        magType: null,
+        place: null,
+        depth_km: null,
+        time,
+        updated: time + 10_000,
+        country_id: null,
+        country_name: null,
+      },
+    });
+
+    expect(latestEventIds([
+      event("older", 10),
+      event("latest-a", 20),
+      event("latest-b", 20),
+      event("invalid", 30, [181, 2]),
+    ])).toEqual(new Set(["latest-a", "latest-b"]));
+    expect(latestEventIds([event("invalid-time", Number.NaN)])).toEqual(new Set());
   });
 });
