@@ -424,6 +424,7 @@ también funcionen al recargar directamente una URL del sitio.
 | Docker no puede conectarse al motor | Inicia Docker Desktop y espera a que termine de cargar. |
 | El sitio funciona localmente pero no en Netlify | `config.json` debe usar la dirección HTTPS actual de ngrok, sin `/api`; después hay que publicar el cambio. |
 | Netlify indica que no puede consultar la salud de la API | Abre `/config.json` en el dominio publicado: si `apiBaseUrl` es `localhost`, corrígelo y vuelve a publicar. Luego prueba `/api/salud` en el dominio ngrok desde otra terminal; si no responde, verifica que ngrok sigue abierto y reenvía a `localhost:8000`. |
+| El navegador muestra `ERR_CERT_AUTHORITY_INVALID` o `ERR_CONNECTION_RESET` al llamar a ngrok | No aceptes ni omitas el aviso del certificado. Prueba desde otra red, por ejemplo un punto de acceso móvil. Una VPN, proxy, filtro DNS o inspección HTTPS de la red puede redirigir o interrumpir el dominio; si es una red administrada, solicita que permitan el dominio ngrok sin sustituir su certificado. |
 | Error CORS en el navegador | `CORS_ALLOWED_ORIGINS` debe contener el origen exacto de Netlify (solo esquema y dominio) y la API debe haberse recreado. |
 | El dominio ngrok ya no responde | El túnel se cerró o cambió de URL. Inícialo otra vez y actualiza `frontend\public\config.json`; publica el nuevo build. |
 | Netlify no encuentra los archivos compilados | Revisa que la base sea `frontend` y la carpeta publicada `dist/observatorio/browser`. |
