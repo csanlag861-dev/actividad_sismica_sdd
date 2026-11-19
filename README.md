@@ -108,6 +108,7 @@ la configuración. El token de ngrok es un secreto y no pertenece al frontend.
 - [FAQ del alumnado](docs/FAQ-ALUMNADO.md)
 - [Guía de entregables](docs/Guia-entregables-observatorio-sismico.md)
 - [Contrato de API](docs/CONTRATO-API.md)
+- [Guía paso a paso de despliegue](docs/GUIA-DESPLIEGUE.md)
 - [Operación del pipeline](docs/PIPELINE-OPERACION.md)
 - [Fuentes y licencias](docs/FUENTES-Y-LICENCIAS.md)
 - [Memoria de evaluación y resultados medidos](docs/memoria-evaluacion.md)

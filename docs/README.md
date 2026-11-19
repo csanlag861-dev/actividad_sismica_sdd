@@ -7,6 +7,10 @@ y amplía la referencia técnica de frontend; no debe interpretarse como una
 lista de componentes aún pendientes. La aplicación actual usa MapLibre, no
 Leaflet.
 
+Para desplegar una demostración paso a paso en Netlify, con el backend en
+Docker Compose y acceso público temporal mediante ngrok, consulta la
+[guía de despliegue](./GUIA-DESPLIEGUE.md).
+
 ## 1. Mapa de demostración del material de partida
 
 La siguiente descripción se refiere al mapa original del paquete docente; el
