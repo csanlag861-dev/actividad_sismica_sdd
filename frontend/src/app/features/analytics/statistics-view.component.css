@@ -75,6 +75,12 @@
   height: 190px;
 }
 
+.country-chart-viewport {
+  max-height: 390px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .empty-chart,
 .missing-note {
   color: var(--color-text-secondary);

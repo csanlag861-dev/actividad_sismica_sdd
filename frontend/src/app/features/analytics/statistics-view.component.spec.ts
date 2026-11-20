@@ -22,7 +22,18 @@ describe("StatisticsViewComponent", () => {
       country_counts: {
         unit: "events",
         missing_count: 1,
-        buckets: [{ country_id: null, country_name: "Sin país asignado", count: 1 }],
+        buckets: [
+          { country_id: null, country_name: "Sin país asignado", count: 1 },
+          { country_id: "USA", country_name: "Estados Unidos", count: 169 },
+          { country_id: "CAN", country_name: "Canadá", count: 2 },
+          { country_id: "CHL", country_name: "Chile", count: 1 },
+          { country_id: "ESP", country_name: "España", count: 1 },
+          { country_id: "MEX", country_name: "México", count: 2 },
+          { country_id: "PHL", country_name: "Filipinas", count: 1 },
+          { country_id: "PNG", country_name: "Papúa Nueva Guinea", count: 1 },
+          { country_id: "TZA", country_name: "Tanzania", count: 4 },
+          { country_id: "JPN", country_name: "Japón", count: 1 },
+        ],
       },
       distributions: {
         magnitude: {
@@ -61,6 +72,11 @@ describe("StatisticsViewComponent", () => {
     expect(text).toContain("País ESP");
     expect(text).toContain("events/hour (UTC)");
     expect(text).toContain("Sin país asignado");
+    expect(text).toContain("Estados Unidos");
+    expect(text).toContain("recorrer todos los países");
+    expect(fixture.nativeElement.querySelector(".country-chart-viewport")).not.toBeNull();
+    expect(fixture.nativeElement.querySelector(".country-chart-viewport .chart").style.height).toBe("260px");
+    expect(fixture.componentInstance.countryChartBuckets[0].country_id).toBe("USA");
     expect(text).toContain("2 sin hora");
     expect(text).toContain("1 ausentes");
     expect(text).toContain("No hay profundidades válidas");

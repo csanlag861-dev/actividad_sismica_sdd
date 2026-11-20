@@ -416,6 +416,16 @@ solicitudes al túnel.
 La regla `_redirects` de Netlify está incluida para que las rutas de Angular
 también funcionen al recargar directamente una URL del sitio.
 
+### Estado probado por el alumno
+
+El alumno confirma que ha probado el flujo con el frontend publicado en
+Netlify y la API ejecutándose en Docker y expuesta mediante ngrok. Al caer el
+túnel, el frontend muestra un mensaje de que no puede conectarse a la API; el
+mensaje informa del fallo de comunicación. Esta guía documenta el
+procedimiento, pero no conserva las direcciones públicas ni evidencias
+independientes de esa ejecución, ni describe un reintento automático tras
+recuperar el túnel.
+
 ## Problemas frecuentes
 
 | Síntoma | Qué revisar |

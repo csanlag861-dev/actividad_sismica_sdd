@@ -1,120 +1,199 @@
 # Observatorio de actividad sísmica
 
-Proyecto de Sistemas de Big Data que ingiere GeoJSON de USGS, mantiene versiones
-de eventos, integra el catálogo Natural Earth, y ofrece consultas y análisis
-desde una SPA Angular.
+Observatorio de actividad sísmica desarrollado para el proyecto de Sistemas
+de Big Data. Recoge y versiona terremotos del catálogo de USGS, los procesa
+con Kafka y PostgreSQL, y permite explorarlos desde una aplicación Angular.
+
+> **Entrega:** la [memoria del proyecto](memoria-proyecto.md) documenta el
+> modelo de datos, las decisiones de diseño, la procedencia y calidad de los
+> datos, los análisis, las pruebas, las mediciones y los costes.
+
+## Aplicación y demostración
+
+- **Aplicación desplegada:** [actividad-sismica-sdd.netlify.app](https://actividad-sismica-sdd.netlify.app/)
+- **Vídeo explicativo y demo:** [Ver en YouTube](https://youtu.be/hdkaBeDkLaQ)
+
+El frontend se sirve desde Netlify y consulta una API desplegada localmente y
+expuesta mediante ngrok. Por tanto, la aplicación puede abrirse aunque el
+backend o el túnel estén apagados, pero no podrá cargar datos en ese caso.
+
+## Funcionalidades
+
+- Consulta y exploración de actividad sísmica reciente.
+- Mapa, filtros, estadísticas y comparación con el histórico disponible.
+- Carga histórica del año 2025 y vista de reproducción aislada de los datos
+  live en la ruta `/reproduccion`.
+- Trazabilidad de las versiones y ejecuciones de ingesta.
+- Validación de eventos, integración geográfica con Natural Earth y registro
+  de mensajes rechazados en cuarentena.
 
 ## Arquitectura
 
-Docker Compose ejecuta cinco servicios separados: productor Python, Kafka,
-consumidor Python, PostgreSQL y API FastAPI. El frontend Angular se desarrolla
-localmente y se puede publicar como SPA en Netlify. Durante una demostración
-pública, ngrok expone únicamente la API.
+```text
+USGS → productor Python → Kafka → consumidor Python
+     → PostgreSQL → API FastAPI → aplicación Angular
+                              (Netlify; API pública mediante ngrok)
+```
 
-Flujo: USGS → productor → Kafka → consumidor (validación, cuarentena e
-integración geográfica) → PostgreSQL → FastAPI → Angular.
+Docker Compose ejecuta los cinco servicios del backend: productor, Kafka,
+consumidor, PostgreSQL y API. La API aplica las migraciones de base de datos
+al arrancar. Kafka y PostgreSQL no publican puertos en el host; la API local
+está disponible en `127.0.0.1:8000`. Angular se ejecuta en desarrollo local
+o se publica como una SPA en Netlify.
 
-## Requisitos y puesta en marcha
+## Requisitos
 
-- Docker Compose v2.
-- Node.js 22.12+ o 24 y npm.
-- Conexión a Internet para las consultas USGS y los mapas base.
+- Docker Engine y Docker Compose v2.
+- Node.js 22.12+ o 24 y npm, para ejecutar o compilar el frontend.
+- Python 3.12, solo si se van a ejecutar las pruebas del backend directamente
+  en el host.
+- Conexión a Internet para consultar USGS y cargar los mapas base.
 
-1. Crea un `.env` local a partir de `.env.example` y sustituye la contraseña
-   de PostgreSQL por un valor seguro. No subas `.env`.
-2. Arranca el backend:
+## Ejecutar el backend
+
+Desde la raíz del repositorio:
+
+1. Crea la configuración local y define una contraseña segura para PostgreSQL:
+
+   ```sh
+   cp .env.example .env
+   ```
+
+   Edita `.env` y sustituye `POSTGRES_PASSWORD`. El fichero `.env` está
+   excluido del repositorio: no compartas ni publiques sus credenciales.
+2. Construye e inicia los cinco servicios:
 
    ```sh
    docker compose up --build -d
    docker compose ps
    ```
 
-3. La primera consulta live comienza al arrancar. Para cargar el baseline de
-   2025 una vez, o reanudar una carga interrumpida:
+   Espera a que los servicios estén saludables. El API aplica las migraciones
+   y prepara el catálogo geográfico durante su inicialización.
+3. Comprueba el API y la documentación interactiva:
 
-   ```sh
-   docker compose run --rm --no-deps productor \
-     python -m observatorio.producer.replay \
-     --year 2025 --min-magnitude 4 --event-type earthquake --interval-seconds 0
+   - Salud: <http://127.0.0.1:8000/api/salud>
+   - Estadísticas: <http://127.0.0.1:8000/api/estadisticas>
+   - OpenAPI/Swagger: <http://127.0.0.1:8000/docs>
+
+La ingesta live comienza automáticamente y consulta el feed de USGS cada 60
+segundos. Para cargar una vez el baseline histórico mundial de 2025
+(terremotos de magnitud mínima 4), o reanudar una carga interrumpida, ejecuta:
+
+```sh
+docker compose run --rm --no-deps productor \
+  python -m observatorio.producer.replay \
+  --year 2025 --min-magnitude 4 --event-type earthquake --interval-seconds 0
+```
+
+Las respuestas originales y los checkpoints se guardan en el volumen
+`source_archives`. La carga histórica no borra los datos live ni los
+volúmenes. Para más detalles sobre la operación consulta
+[PIPELINE-OPERACION.md](docs/PIPELINE-OPERACION.md).
+
+## Ejecutar el frontend en local
+
+Con el backend en marcha:
+
+1. Abre `frontend/public/config.json` y configura temporalmente el origen del
+   API local:
+
+   ```json
+   {
+     "apiBaseUrl": "http://localhost:8000"
+   }
    ```
 
-   Las respuestas originales y los checkpoints quedan en el volumen
-   `source_archives`. La carga no borra los datos live ni los volúmenes.
-4. Comprueba la API en `http://127.0.0.1:8000/api/salud` y
-   `http://127.0.0.1:8000/api/estadisticas`.
-5. Para desarrollar el panel:
+   El origen debe ser la URL base, sin `/api`. No incluyas credenciales.
+   Este cambio es solo para desarrollo local: restaura la URL pública anterior
+   antes de publicar o confirmar cambios.
+2. Instala las dependencias y arranca Angular:
 
    ```sh
    cd frontend
    npm ci
    npm start
    ```
+3. Abre <http://localhost:4200>. Para compilar la SPA de producción:
 
-   Abre `http://localhost:4200`. El build Netlify se genera con
-   `npm run build` en `frontend/`; la carpeta publicada es
-   `dist/observatorio/browser`.
+   ```sh
+   npm run build
+   ```
 
-   La ruta `/reproduccion` consulta de forma aislada los eventos históricos
-   `replay`; permite cambiar el intervalo y la magnitud mínima sin alterar
-   la exploración ni las estadísticas live.
+   Netlify publica `frontend/dist/observatorio/browser`; la configuración de
+   compilación y el fallback para rutas Angular están en
+   [netlify.toml](frontend/netlify.toml).
 
-Kafka y PostgreSQL no publican puertos en el host. El log de Kafka conserva
-mensajes durante siete días; PostgreSQL y los archivos originales usan
-volúmenes persistentes.
+## Publicación y demostración
 
-Para detener los contenedores sin borrar datos:
+Netlify aloja la SPA; para que esta consulte un backend local durante la
+demostración, ngrok debe exponer el puerto `8000` con una URL HTTPS. Configura
+esa URL en `frontend/public/config.json` como `apiBaseUrl`, sin `/api` ni
+credenciales, y añade el origen exacto de Netlify a `CORS_ALLOWED_ORIGINS` en
+`.env`. Después de cambiar la configuración del frontend, reconstruye y
+publica el sitio. No publiques el token de ngrok ni expongas Kafka o
+PostgreSQL.
 
-```sh
-docker compose down
-```
-
-Los volúmenes nombrados se conservan al detener y recrear servicios. No uses
-`docker compose down -v` si quieres mantener la base, los archivos originales
-y sus checkpoints. Para revisar fallos:
-
-```sh
-docker compose logs --since 10m api consumidor productor kafka postgres
-```
+La guía con los pasos completos está en
+[GUIA-DESPLIEGUE.md](docs/GUIA-DESPLIEGUE.md). Si el equipo que ejecuta el
+backend se apaga o el túnel deja de estar disponible, la API no será accesible
+desde el sitio público.
 
 ## Pruebas
 
-Desde la raíz, si las dependencias de `backend/requirements.txt` están
-instaladas:
+Las pruebas del backend se ejecutan desde `backend/` (las de integración que
+requieren PostgreSQL necesitan el servicio correspondiente activo):
 
 ```sh
 cd backend
+python3.12 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
 python -m pytest -q tests/unit tests/contract tests/integration
-cd ../frontend
+deactivate
+```
+
+Las pruebas y la compilación del frontend:
+
+```sh
+cd frontend
 node --test tests/api-client.test.mjs
 npm test
 npm run build
 ```
 
-`npm test` requiere Chrome/Chromium para ChromeHeadless. Las pruebas PostgreSQL
-dependen del servicio Compose activo. La memoria y la evidencia de ejecución
-indican qué verificaciones se pudieron completar en este entorno.
+`npm test` requiere Chrome o Chromium para ChromeHeadless. La
+[memoria del proyecto](memoria-proyecto.md) recoge los resultados ejecutados
+y señala expresamente las verificaciones que no se pudieron completar.
 
-## Configuración pública y túnel
+## Detener el sistema y conservar los datos
 
-Para uso local, el backend se consulta en `http://127.0.0.1:8000`. Para Netlify,
-ejecuta `ngrok http 8000`, configura el origen HTTPS exacto de Netlify en
-`CORS_ALLOWED_ORIGINS` y apunta `frontend/public/config.json` a la URL HTTPS
-asignada, sin `/api` ni credenciales. Reconstruye y publica después de cambiar
-la configuración. El token de ngrok es un secreto y no pertenece al frontend.
+Para detener los contenedores sin borrar la base de datos, Kafka ni los
+archivos originales:
 
-## Documentación y evaluación
+```sh
+docker compose down
+```
 
+Los volúmenes nombrados se conservan al detener y recrear los servicios. No
+ejecutes `docker compose down -v` si quieres conservarlos. Para consultar
+errores recientes:
+
+```sh
+docker compose logs --since 10m api consumidor productor kafka postgres
+```
+
+## Documentación del proyecto
+
+- [Memoria del proyecto: decisiones, análisis, pruebas y costes](memoria-proyecto.md)
 - [Enunciado y rúbrica](docs/ENUNCIADO.md)
-- [FAQ del alumnado](docs/FAQ-ALUMNADO.md)
 - [Guía de entregables](docs/Guia-entregables-observatorio-sismico.md)
+- [FAQ del alumnado](docs/FAQ-ALUMNADO.md)
 - [Contrato de API](docs/CONTRATO-API.md)
-- [Guía paso a paso de despliegue](docs/GUIA-DESPLIEGUE.md)
+- [Guía de despliegue](docs/GUIA-DESPLIEGUE.md)
 - [Operación del pipeline](docs/PIPELINE-OPERACION.md)
 - [Fuentes y licencias](docs/FUENTES-Y-LICENCIAS.md)
-- [Memoria de evaluación y resultados medidos](docs/memoria-evaluacion.md)
+- [Guion del vídeo de demostración](docs/guion-video-demostracion.md)
 - [Protocolo de evaluación de usabilidad](docs/evaluacion-usabilidad-007.md)
 - [Validación y límites de las pruebas](docs/VALIDACION.md)
-
-La memoria distingue el análisis de una captura real de USGS, las mediciones
-sintéticas de rendimiento y las pruebas que todavía requieren navegador,
-despliegue público o defensa oral.
+- [Roadmap](ROADMAP.md)

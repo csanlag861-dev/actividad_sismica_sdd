@@ -1,14 +1,14 @@
 Evaluación como profesor
-Nota global: 8,8 / 10 — Notable alto / sobresaliente limitado
-La nota se basa exclusivamente en los descriptores del apartado 13 y en las evidencias comprobables del repositorio. No sería prudente conceder un 10 completo mientras algunas entregas críticas siguen pendientes de ejecución pública.
+Nota global: 8,9 / 10 — Notable alto / sobresaliente limitado (provisional)
+La nota se basa en los descriptores del apartado 13 y en las evidencias disponibles. El alumno confirma que Netlify, Docker y ngrok ya se han probado; se recoge esa validación como declaración del alumno, no como una comprobación independiente. Siguen sin ejecutarse SC-002 y la evaluación formal de diez participantes exigida por SC-003/SC-006.
 
 Criterio	Nota	Nivel
 Extracción	9,5	Sobresaliente
 Calidad	9,0	Sobresaliente
 Modelado	9,0	Sobresaliente
-Análisis	9,0	Sobresaliente
-Reflexión	7,5	Notable
-Promedio	8,8	Notable alto
+Análisis	8,5	Notable alto
+Reflexión	8,5	Notable alto
+Promedio	8,9	Notable alto
 1. Extracción — 9,5 / 10
 Por qué sobresaliente
 
@@ -22,9 +22,7 @@ La reproducción está separada mediante el modo replay.
 Las instrucciones de extracción y reproducción están disponibles en README.md.
 Qué impide el 10
 
-No se ha publicado una URL real de Netlify ni abierto un túnel ngrok público.
-La extracción live no tiene una demostración pública registrada en la memoria.
-Falta una ejecución observable por un tercero de las pruebas de cierre y reapertura del túnel.
+El despliegue se considera realizado según lo informado por el alumno. Cuando ngrok cae, la aplicación muestra un error de conexión con la API. No se documenta un reintento automático al recuperar el túnel, ni se repitió independientemente esta validación.
 2. Calidad — 9,0 / 10
 Por qué sobresaliente
 
@@ -38,7 +36,9 @@ Países asignados.
 Rangos de coordenadas y profundidad.
 Ausencias y cuarentena.
 Limitaciones de exactitud física.
-Está bien documentada la diferencia entre resultados reales y sintéticos en memoria-evaluacion.md. Además, las decisiones son sensatas:
+Está bien documentada la diferencia entre resultados reales y sintéticos en
+[memoria-proyecto.md](../memoria-proyecto.md). Además, las decisiones
+son sensatas:
 
 Mantener magnitudes nulas en lugar de sustituirlas por cero.
 Mantener el estado «sin país asignado».
@@ -98,39 +98,41 @@ Qué falta
 Las tres conclusiones mínimas están ampliamente cubiertas, pero faltan algunos resultados visuales finales con capturas de los filtros aplicados.
 La comparación de 29 frente a 50,1425 eventos/día es útil, aunque no debe utilizarse sin advertir la variabilidad de una sola ventana.
 No se ha ejecutado una prueba visual completa de todos los gráficos en otro navegador o dispositivo.
-5. Reflexión — 7,5 / 10
-Por qué notable
+
+Como corrección puntual, se confirmó que la API sí incluía Estados Unidos y que el límite estaba en la presentación del gráfico de países. Ahora se ordena por recuento, se dimensiona según el número de categorías y ofrece desplazamiento; una comprobación visual con datos de muestra mostró Estados Unidos al inicio. Esto corrige el defecto reportado, aunque no sustituye una validación con el conjunto completo de la instancia publicada.
+5. Reflexión — 8,5 / 10
+Por qué notable alto, acercándose a sobresaliente
 
 La reflexión incluye:
 
 Complejidad lineal frente a búsqueda por diccionario.
 Tres tamaños de entrada.
 Memoria, pico de memoria y mediana temporal.
-Limitaciones de PostgreSQL, Kafka y 100 millones de registros.
+Complejidad de búsqueda, integración geográfica y agregación.
 Retención de datos.
-Propuestas de particionado, índices y escalado.
-Costes cualitativos de hardware, almacenamiento, mantenimiento y desarrollo.
-Qué impide sobresaliente
+Medición de página PostgreSQL y latencias p50/p95 del API con el conjunto real de 18.302 eventos.
+Comparación diagnóstica de planes indexado/secuencial y límites de dicha medición.
+Proyección de almacenamiento y throughput para 100 millones, con riesgos de memoria, agregación, índice y geoprocesamiento.
+Estimaciones de electricidad, esfuerzo de desarrollo, mantenimiento y una infraestructura futura, separando supuestos de datos medidos.
 
-No se mide la mayoría de los costes reales: electricidad, almacenamiento y desarrollo.
-No hay una estimación con supuestos identificados de una infraestructura futura.
-El benchmark es sintético y no mide consultas reales de PostgreSQL ni API.
-No se razonan numéricamente las consecuencias de 100 millones de registros.
-Los pendientes de despliegue, usabilidad y rendimiento se reconocen, pero no se han resuelto.
-Esta parte se queda claramente en Notable, aunque casi alcanza Sobresaliente.
+Qué sigue impidiendo el sobresaliente completo
+
+No hay medición directa con vatímetro, factura de proveedor ni registro de las horas históricas de desarrollo; los costes monetarios son escenarios hipotéticos transparentes, no gastos comprobados.
+La proyección a 100 millones es una extrapolación dimensional desde 18.302 registros, no una prueba real de carga.
+La medición de API es local, secuencial y no incluye renderizado ni concurrencia; SC-002 y la evaluación humana formal no están ejecutados. El alumno informa de una prueba informal con una persona, que encontró intuitiva la aplicación, pero no es evidencia suficiente para SC-003/SC-006.
+
+La reflexión mejora materialmente y deja de depender solo de un microbenchmark sintético: aporta medidas de la base/API, números de escalado y supuestos de coste. Se mantiene provisional mientras no se ejecuten las pruebas de rendimiento y aceptación pendientes.
 
 Falta principal antes de la defensa
 Para asegurar la máxima calificación, conviene completar y registrar:
 
-Despliegue público con Netlify y ngrok.
-Evidencias reales de cerrar y volver a abrir el túnel.
 Evidencias de duplicado, revisión posterior y versión antigua.
 Evidencia de magnitud nula y coordenadas inválidas.
 Capturas finales del panel con filtros y resultados.
 Prueba de rendimiento con la fixture definida.
-Evaluación de diez participantes, si es posible dentro del alcance.
+Evaluación formal de diez participantes, si se pretende declarar superados SC-003/SC-006. La prueba informal de una persona puede citarse como impresión exploratoria, pero no sustituye este requisito.
 Explicación individual oral del flujo y una decisión técnica propia.
 Conclusión del profesor
-Es un proyecto técnicamente sólido y muy bien documentado. Los datos reales, el pipeline, el versionado, el modelo, la calidad y las conclusiones justifican una calificación alta. La nota se reduce principalmente por las pruebas públicas y orales todavía pendientes, no por una ausencia grave en los criterios centrales.
+Es un proyecto técnicamente sólido y muy bien documentado. Los datos reales, el pipeline, el versionado, el modelo, la calidad y las conclusiones justifican una calificación alta. La nota se reduce principalmente por la ausencia de pruebas de rendimiento y aceptación formal, y por no disponer de mediciones de costes reales, no por una ausencia grave en los criterios centrales. El despliegue se considera probado según la información del alumno.
 
-La rúbrica se podría cambiar de 8,8/10 a 9,5–10/10 una vez completada la demostración pública y ejecutadas las pruebas de aceptación restantes.
+La nota se mantiene en 8,9/10. Podría mejorar tras completar las pruebas de rendimiento y aceptación restantes, pero no se anticipa una nota de 9,5–10 sin esas evidencias.

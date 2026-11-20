@@ -113,7 +113,7 @@ país la calcula el consumidor mediante el catálogo Natural Earth; dibujar
 fronteras no la sustituye.
 
 Consulta el README de raíz para ejecutar el proyecto y
-[`memoria-evaluacion.md`](memoria-evaluacion.md) para el modelo, análisis,
+[memoria-proyecto.md](../memoria-proyecto.md) para el modelo, análisis,
 mediciones, pruebas y límites de evaluación. `VALIDACION.md` distingue la
 validación del paquete de partida de las comprobaciones del proyecto actual.
 

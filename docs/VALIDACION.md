@@ -3,7 +3,7 @@
 Esta primera sección registra las comprobaciones del mapa/material base, no el
 estado final del proyecto. La implementación posterior del backend, las
 pruebas y su evaluación se documentan al final y en
-[`memoria-evaluacion.md`](memoria-evaluacion.md).
+[memoria-proyecto.md](../memoria-proyecto.md).
 
 Comprobaciones realizadas el 27 de octubre de 2026:
 
@@ -62,11 +62,25 @@ Comprobaciones ejecutadas el 18 de noviembre de 2026:
 - Un smoke test en `http://localhost:4200/reproduccion` confirmó la consulta
   de 60 eventos para el 1 de enero de 2025. No equivale a una evaluación de
   usabilidad ni a una prueba de despliegue.
-- No se ha configurado ni desplegado una cuenta real de Netlify/ngrok.
+- El alumno confirma que ha probado la publicación del frontend en Netlify y
+  la API local expuesta por ngrok. En caso de caída del túnel, el frontend
+  presenta un error de conexión con la API. Esta revisión no accedió a los
+  dominios públicos, así que se registra como validación comunicada por el
+  alumno; no se afirma un reintento automático al recuperarse el túnel.
+- Una persona probó informalmente la aplicación y la encontró intuitiva,
+  según el alumno. No se siguió el protocolo definido ni se midieron tareas o
+  tiempos; no equivale a la evaluación formal de diez participantes.
 - El guion de la evaluación humana SC-003/SC-006 está preparado en
   [`evaluacion-usabilidad-007.md`](evaluacion-usabilidad-007.md), pero no se
   ejecutó: faltan diez participantes reales y una fixture de prueba aislada.
   No se han medido esos criterios ni los umbrales de rendimiento SC-002.
+
+La respuesta local de `/api/estadisticas` consultada el 19-11-2026 incluía
+`USA` («Estados Unidos») con 169 eventos. El gráfico no acomodaba bien todas
+las categorías porque su altura era fija; ahora aumenta con el número de
+países, ordena por recuento descendente y permite desplazarse por el contenido.
+Una comprobación visual con datos de muestra confirmó que Estados Unidos queda
+al inicio del gráfico y que una lista extensa conserva el desplazamiento.
 
 Las mediciones de búsqueda incluidas en la memoria son microbenchmarks locales
 con identificadores sintéticos, no estadísticas sísmicas. Los resultados del

@@ -33,6 +33,16 @@ export class StatisticsViewComponent implements AfterViewInit, OnChanges, OnDest
     ].join(" · ");
   }
 
+  get countryChartBuckets(): StatisticsResponse["country_counts"]["buckets"] {
+    return [...this.statistics.country_counts.buckets].sort(
+      (left, right) => right.count - left.count || left.country_name.localeCompare(right.country_name),
+    );
+  }
+
+  get countryChartHeight(): number {
+    return Math.max(190, this.countryChartBuckets.length * 26);
+  }
+
   ngAfterViewInit(): void {
     this.viewReady = true;
     this.charts = this.chartElements.map((element) => init(element.nativeElement, undefined, { renderer: "canvas" }));
@@ -83,11 +93,12 @@ export class StatisticsViewComponent implements AfterViewInit, OnChanges, OnDest
       xAxis: { type: "value", ...axis },
       yAxis: {
         type: "category",
-        data: this.statistics.country_counts.buckets.map((bucket) => bucket.country_name),
-        axisLabel: axis.axisLabel,
+        data: this.countryChartBuckets.map((bucket) => bucket.country_name),
+        inverse: true,
+        axisLabel: { ...axis.axisLabel, interval: 0 },
         axisLine: axis.axisLine,
       },
-      series: [{ type: "bar", data: this.statistics.country_counts.buckets.map((bucket) => bucket.count), itemStyle: { color: primaryColor } }],
+      series: [{ type: "bar", data: this.countryChartBuckets.map((bucket) => bucket.count), itemStyle: { color: primaryColor } }],
     }, true);
 
     this.charts[2].setOption(this.distributionOption(this.statistics.distributions.magnitude, primaryColor, axis));

@@ -20,7 +20,10 @@
     <article class="chart-card">
       <h3>Recuento por país</h3>
       <p class="chart-meta">{{ statistics.country_counts.unit }} · {{ statistics.country_counts.missing_count }} sin país</p>
-      <div #chart class="chart" role="img" aria-label="Gráfico de eventos por país"></div>
+      <p class="chart-meta">Desplázate dentro del gráfico para recorrer todos los países.</p>
+      <div class="country-chart-viewport" tabindex="0" aria-label="Gráfico desplazable de eventos por país">
+        <div #chart class="chart" [style.height.px]="countryChartHeight" role="img" aria-label="Gráfico de eventos por país"></div>
+      </div>
       @if (!statistics.country_counts.buckets.length) {
         <p class="empty-chart">No hay categorías de país en esta respuesta.</p>
       }
